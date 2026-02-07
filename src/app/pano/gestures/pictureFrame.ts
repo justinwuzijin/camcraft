@@ -99,10 +99,23 @@ function isPictureFrameHand(landmarks: HandLandmarks): boolean {
   return ev !== null && ev.pass;
 }
 
-export function detectPictureFrame(hands: HandLandmarks[]): boolean {
-  return (
-    hands.length === 2 && hands.every((hand) => isPictureFrameHand(hand))
-  );
+/**
+ * Detects picture-frame gesture. When handedness is provided, only the right hand
+ * is required to form the frame. When not provided, any single hand in frame pose counts.
+ */
+export function detectPictureFrame(
+  hands: HandLandmarks[],
+  handedness?: string[]
+): boolean {
+  if (hands.length === 0) return false;
+  if (handedness && handedness.length === hands.length) {
+    const rightIndex = handedness.findIndex(
+      (h) => h.toLowerCase() === "right"
+    );
+    if (rightIndex === -1) return false;
+    return isPictureFrameHand(hands[rightIndex]);
+  }
+  return hands.length >= 1 && hands.some((hand) => isPictureFrameHand(hand));
 }
 
 export function getPictureFrameDebug(

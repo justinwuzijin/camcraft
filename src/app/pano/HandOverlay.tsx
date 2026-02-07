@@ -58,7 +58,7 @@ export default function HandOverlay({
     detectForVideo: (
       image: HTMLVideoElement,
       timestamp: number
-    ) => { landmarks: { x: number; y: number }[][] };
+    ) => { landmarks: { x: number; y: number }[][]; handedness?: { categoryName?: string }[][] };
     HAND_CONNECTIONS: { start: number; end: number }[];
   } | null>(null);
   const lastVideoTimeRef = useRef(-1);
@@ -75,6 +75,7 @@ export default function HandOverlay({
 
   useEffect(() => {
     let stream: MediaStream | null = null;
+    let aborted = false;
 
     async function init() {
       try {
@@ -84,6 +85,7 @@ export default function HandOverlay({
             stream = await navigator.mediaDevices.getUserMedia({
               video: { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT },
             });
+            if (aborted) { stream.getTracks().forEach((t) => t.stop()); return; }
             const video = videoRef.current;
             if (!video) return;
             video.srcObject = stream;
@@ -91,7 +93,11 @@ export default function HandOverlay({
           })(),
         ]);
 
+        if (aborted) return;
+
         const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
+        if (aborted) return;
+
         const handLandmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: { modelAssetPath: MODEL_URL },
           runningMode: "VIDEO",
@@ -100,6 +106,8 @@ export default function HandOverlay({
           minHandPresenceConfidence: 0.3,
         });
 
+        if (aborted) return;
+
         handLandmarkerRef.current = {
           detectForVideo: (img: HTMLVideoElement, ts: number) =>
             handLandmarker.detectForVideo(img, ts),
@@ -107,15 +115,19 @@ export default function HandOverlay({
         };
         setReady(true);
       } catch (e) {
+        if (aborted) return;
         setError(e instanceof Error ? e.message : "Failed to start camera");
       }
     }
 
     init();
     return () => {
+      aborted = true;
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }
+      const video = videoRef.current;
+      if (video) video.srcObject = null;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
@@ -212,7 +224,10 @@ export default function HandOverlay({
         lastRunRef.current = now;
         videoTimestampRef.current += 33333;
         const ts = videoTimestampRef.current;
-        let result: { landmarks: { x: number; y: number }[][] };
+        let result: {
+          landmarks: { x: number; y: number }[][];
+          handedness?: { categoryName?: string }[][];
+        };
         try {
           result = handLandmarker.detectForVideo(video, ts);
         } catch (err) {
@@ -307,11 +322,15 @@ export default function HandOverlay({
           return `FO hand ${i}: fist=${dbg.isFist ? "Y" : "n"} open=${dbg.isOpen ? "Y" : "n"} (idx=${dbg.indexDist.toFixed(2)} mid=${dbg.middleDist.toFixed(2)} ring=${dbg.ringDist.toFixed(2)} pink=${dbg.pinkyDist.toFixed(2)} thumb=${dbg.thumbDist.toFixed(2)})`;
         });
 
-        // ── Picture frame (only when camera overlay is active) ──
+        // ── Picture frame (only when camera overlay is active); right hand only ──
         const overlayOn = !!cameraOverlayActiveRef.current;
-        const bothHandsPictureFrame = overlayOn && detectPictureFrame(result.landmarks);
+        const handednessLabels =
+          result.handedness?.map((h) => h[0]?.categoryName ?? "") ?? [];
+        const rightHandPictureFrame =
+          overlayOn &&
+          detectPictureFrame(result.landmarks, handednessLabels);
         const pictureFrameDebug = getPictureFrameDebug(result.landmarks);
-        if (bothHandsPictureFrame) {
+        if (rightHandPictureFrame) {
           if (pictureFrameHoldStartRef.current === null) {
             pictureFrameHoldStartRef.current = now;
           }
@@ -354,7 +373,7 @@ export default function HandOverlay({
             `Fist→Open: fist=${anyFist ? "YES" : "no"} open=${anyOpen ? "YES" : "no"}${fistTrackingStatus}`,
             ...fistOpenDebugArr,
             `Camera overlay: ${overlayOn ? "ACTIVE" : "off"}`,
-            `Picture frame: ${bothHandsPictureFrame ? "yes" : "no"}${!overlayOn ? " (needs overlay)" : ""}`,
+            `Picture frame: ${rightHandPictureFrame ? "yes" : "no"}${!overlayOn ? " (needs overlay)" : ""}`,
             ...pfLines,
             "Camera: on",
           ].join("<br>");
