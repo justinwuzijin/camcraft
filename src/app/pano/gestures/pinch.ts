@@ -1,7 +1,9 @@
 import { HandLandmarks, dist, HAND_LANDMARKS } from "./types";
 
 export const PINCH_DISTANCE_THRESHOLD = 0.08;
-export const ROTATE_SENSITIVITY = 4;
+export const ROTATE_SENSITIVITY = 2;
+/** Minimum delta (in normalized coords) to register — filters sub-pixel jitter */
+export const PINCH_DEAD_ZONE = 0.003;
 
 export type PinchResult = { x: number; y: number; distance: number };
 
