@@ -5,11 +5,16 @@ import {
   detectPinch,
   detectPictureFrame,
   getPictureFrameDebug,
+  detectFist,
+  detectOpenHand,
+  getFistOpenDebug,
   PINCH_DISTANCE_THRESHOLD,
   ROTATE_SENSITIVITY,
   PINCH_DEAD_ZONE,
   PICTURE_FRAME_HOLD_MS,
   PICTURE_FRAME_COOLDOWN_MS,
+  FIST_TO_OPEN_WINDOW_MS,
+  FIST_TO_OPEN_COOLDOWN_MS,
 } from "./gestures";
 
 const WASM_BASE =
@@ -28,11 +33,15 @@ export type GestureDeltaRef = React.MutableRefObject<{
 type HandOverlayProps = {
   gestureDeltaRef?: GestureDeltaRef;
   onPictureFrame?: () => void;
+  onFistOpen?: () => void;
+  cameraOverlayActive?: boolean;
 };
 
 export default function HandOverlay({
   gestureDeltaRef,
   onPictureFrame,
+  onFistOpen,
+  cameraOverlayActive,
 }: HandOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -57,6 +66,12 @@ export default function HandOverlay({
   const videoTimestampRef = useRef(0);
   const lastLogRef = useRef("");
   const lastRunRef = useRef(0);
+  const fistSeenRef = useRef<number | null>(null);
+  const fistOpenLastFiredRef = useRef<number>(0);
+  const onFistOpenRef = useRef(onFistOpen);
+  onFistOpenRef.current = onFistOpen;
+  const cameraOverlayActiveRef = useRef(cameraOverlayActive);
+  cameraOverlayActiveRef.current = cameraOverlayActive;
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -259,7 +274,42 @@ export default function HandOverlay({
           }
         }
 
-        const bothHandsPictureFrame = detectPictureFrame(result.landmarks);
+        // ── Fist → Open hand gesture ──
+        let anyFist = false;
+        let anyOpen = false;
+        for (const hand of result.landmarks) {
+          if (detectFist(hand)) anyFist = true;
+          if (detectOpenHand(hand)) anyOpen = true;
+        }
+
+        if (anyFist && fistSeenRef.current === null) {
+          fistSeenRef.current = now;
+        }
+
+        if (fistSeenRef.current !== null) {
+          if (now - fistSeenRef.current > FIST_TO_OPEN_WINDOW_MS) {
+            fistSeenRef.current = null;
+          } else if (anyOpen) {
+            const cooldownOk =
+              now - fistOpenLastFiredRef.current >= FIST_TO_OPEN_COOLDOWN_MS;
+            if (cooldownOk && onFistOpenRef.current) {
+              fistOpenLastFiredRef.current = now;
+              onFistOpenRef.current();
+            }
+            fistSeenRef.current = null;
+          }
+        }
+
+        // ── Fist/Open debug per hand ──
+        const fistOpenDebugArr = result.landmarks.map((hand, i) => {
+          const dbg = getFistOpenDebug(hand);
+          if (!dbg) return `FO hand ${i}: no data`;
+          return `FO hand ${i}: fist=${dbg.isFist ? "Y" : "n"} open=${dbg.isOpen ? "Y" : "n"} (idx=${dbg.indexDist.toFixed(2)} mid=${dbg.middleDist.toFixed(2)} ring=${dbg.ringDist.toFixed(2)} pink=${dbg.pinkyDist.toFixed(2)} thumb=${dbg.thumbDist.toFixed(2)})`;
+        });
+
+        // ── Picture frame (only when camera overlay is active) ──
+        const overlayOn = !!cameraOverlayActiveRef.current;
+        const bothHandsPictureFrame = overlayOn && detectPictureFrame(result.landmarks);
         const pictureFrameDebug = getPictureFrameDebug(result.landmarks);
         if (bothHandsPictureFrame) {
           if (pictureFrameHoldStartRef.current === null) {
@@ -297,10 +347,14 @@ export default function HandOverlay({
                     fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
                   return `PF hand ${i}: ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`;
                 });
+          const fistTrackingStatus = fistSeenRef.current !== null ? " TRACKING" : "";
           const logText = [
             `Hands detected: ${handsCount}`,
             `Pinch: ${pinching ? "yes" : "no"}`,
-            `Picture frame: ${bothHandsPictureFrame ? "yes" : "no"}`,
+            `Fist→Open: fist=${anyFist ? "YES" : "no"} open=${anyOpen ? "YES" : "no"}${fistTrackingStatus}`,
+            ...fistOpenDebugArr,
+            `Camera overlay: ${overlayOn ? "ACTIVE" : "off"}`,
+            `Picture frame: ${bothHandsPictureFrame ? "yes" : "no"}${!overlayOn ? " (needs overlay)" : ""}`,
             ...pfLines,
             "Camera: on",
           ].join("<br>");

@@ -19,9 +19,14 @@ export default function PanoPage() {
     deltaPolar: number;
   }>({ deltaAzimuth: 0, deltaPolar: 0 });
   const [flash, setFlash] = useState(false);
+  const [cameraOverlayActive, setCameraOverlayActive] = useState(false);
 
   const onPictureFrame = useCallback(() => {
     setFlash(true);
+  }, []);
+
+  const onFistOpen = useCallback(() => {
+    setCameraOverlayActive((prev) => !prev);
   }, []);
 
   useEffect(() => {
@@ -36,7 +41,25 @@ export default function PanoPage() {
       <HandOverlay
         gestureDeltaRef={gestureDeltaRef}
         onPictureFrame={onPictureFrame}
+        onFistOpen={onFistOpen}
+        cameraOverlayActive={cameraOverlayActive}
       />
+      {/* Big camera overlay — toggled by fist→open gesture */}
+      <div
+        className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-all duration-500 ${
+          cameraOverlayActive
+            ? "scale-100 opacity-100"
+            : "scale-90 opacity-0"
+        }`}
+        aria-hidden
+      >
+        <img
+          src="/camera_pov.png"
+          alt=""
+          className="h-[90vh] w-auto max-w-[95vw] object-contain"
+        />
+      </div>
+      {/* Small camera overlay — always visible */}
       <img
         src="/camera_pov.png"
         alt=""
