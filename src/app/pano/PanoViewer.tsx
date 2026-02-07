@@ -78,6 +78,7 @@ export default function PanoViewer({ gestureDeltaRef }: PanoViewerProps) {
     const offset = new THREE.Vector3();
     const spherical = new THREE.Spherical();
 
+    let rafId = 0;
     function animate() {
       const ref = gestureRefRef.current?.current;
       if (ref && (ref.deltaAzimuth !== 0 || ref.deltaPolar !== 0)) {
@@ -99,13 +100,14 @@ export default function PanoViewer({ gestureDeltaRef }: PanoViewerProps) {
         ref.deltaAzimuth = 0;
         ref.deltaPolar = 0;
       }
-      requestAnimationFrame(animate);
+      rafId = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     }
     animate();
 
     return () => {
+      cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
       renderer.dispose();
       texture.dispose();
