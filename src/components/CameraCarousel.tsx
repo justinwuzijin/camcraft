@@ -6,6 +6,42 @@ import { Environment, useGLTF } from "@react-three/drei";
 import { Vector3, Object3D, Group } from "three";
 import gsap from "gsap";
 
+// Camera specs data for the exploded view panel
+const CAMERA_SPECS: Record<string, { body: string; lens: string; focalLength: string; iso: string; sensor: string; resolution: string }> = {
+  "sony-handycam": {
+    body: "Sony DCR-TRV900",
+    lens: "Carl Zeiss Vario-Sonnar",
+    focalLength: "4.3-43mm",
+    iso: "N/A (Gain control)",
+    sensor: '1/3" 3-CCD',
+    resolution: "530 TV lines",
+  },
+  "digital-camera": {
+    body: "Compact Digital",
+    lens: "Built-in zoom lens",
+    focalLength: "35-105mm equiv.",
+    iso: "100-400",
+    sensor: '1/2.3" CCD',
+    resolution: "5 Megapixels",
+  },
+  "fujifilm-xt2": {
+    body: "Fujifilm X-T2",
+    lens: "XF 18-55mm f/2.8-4",
+    focalLength: "18-55mm",
+    iso: "200-12800",
+    sensor: "23.6x15.6mm X-Trans",
+    resolution: "24.3 Megapixels",
+  },
+  "sony-a7iv": {
+    body: "Sony α7 IV",
+    lens: "FE 24-70mm f/2.8 GM",
+    focalLength: "24-70mm",
+    iso: "100-51200",
+    sensor: "35mm Full-Frame BSI",
+    resolution: "33 Megapixels",
+  },
+};
+
 // Camera data in chronological order (oldest to newest)
 const CAMERAS = [
   {
@@ -30,7 +66,7 @@ const CAMERAS = [
     modelPath: "/fujifilm_x-t2_camera.glb",
     date: "2016",
     description: "APS-C mirrorless",
-    baseScale: 2.5,
+    baseScale: 3.5, // Scaled up
   },
   {
     id: "sony-a7iv",
@@ -38,7 +74,7 @@ const CAMERAS = [
     modelPath: "/a7iv.glb",
     date: "2021",
     description: "Full-frame mirrorless",
-    baseScale: 0.4,
+    baseScale: 0.5, // Scaled up
   },
 ];
 
@@ -50,6 +86,7 @@ const StaticCameraModel = ({
   opacity,
   baseScale = 1,
   onClick,
+  visible = true,
 }: {
   modelPath: string;
   position: [number, number, number];
@@ -57,6 +94,7 @@ const StaticCameraModel = ({
   opacity: number;
   baseScale?: number;
   onClick?: () => void;
+  visible?: boolean;
 }) => {
   const finalScale = scale * baseScale;
   const gltf = useGLTF(modelPath);
@@ -72,13 +110,13 @@ const StaticCameraModel = ({
           const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           materials.forEach((mat: any) => {
             mat.transparent = true;
-            mat.opacity = opacity;
+            mat.opacity = visible ? opacity : 0;
             mat.needsUpdate = true;
           });
         }
       }
     });
-  }, [clonedScene, opacity]);
+  }, [clonedScene, opacity, visible]);
 
   // Animate position and scale
   useEffect(() => {
@@ -98,6 +136,8 @@ const StaticCameraModel = ({
       ease: "power2.out",
     });
   }, [position, finalScale]);
+
+  if (!visible) return null;
 
   return (
     <group
@@ -120,13 +160,15 @@ const StaticCameraModel = ({
   );
 };
 
-// Interactive camera model (rotatable with mouse, explosion capability)
+// Interactive camera model with A7-specific explosion
 const InteractiveCameraModel = ({
   modelPath,
   isExploded,
+  isA7 = false,
 }: {
   modelPath: string;
   isExploded: boolean;
+  isA7?: boolean;
 }) => {
   const gltf = useGLTF(modelPath);
   const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
@@ -139,9 +181,14 @@ const InteractiveCameraModel = ({
   const previousMouse = useRef({ x: 0, y: 0 });
   const rotation = useRef({ x: 0, y: 0 });
 
-  // Ensure full opacity on all materials
+  // Ensure full opacity on all materials (except hide Object_4002 for A7)
   useEffect(() => {
     clonedScene.traverse((object: Object3D) => {
+      // Hide problematic parts for A7
+      if (isA7 && object.name === "Object_4002") {
+        object.visible = false;
+        return;
+      }
       if ((object as any).isMesh) {
         const mesh = object as any;
         if (mesh.material) {
@@ -154,7 +201,7 @@ const InteractiveCameraModel = ({
         }
       }
     });
-  }, [clonedScene]);
+  }, [clonedScene, isA7]);
 
   // Initialize explosion data
   useEffect(() => {
@@ -162,30 +209,56 @@ const InteractiveCameraModel = ({
     initializedRef.current = true;
 
     const data = new Map<string, { original: Vector3; displaced: Vector3 }>();
-    const meshes: Object3D[] = [];
 
-    clonedScene.traverse((object: Object3D) => {
-      if ((object as any).isMesh) {
-        meshes.push(object);
-      }
-    });
+    if (isA7) {
+      // A7-specific explosion: lens hood and barrel move forward
+      const lensHoodParts = ["Object_4003", "Object_4004", "Object_4005"];
+      const lensBarrelParts = ["Object_4007"];
+      const explosionFactor = 2.5;
 
-    const center = new Vector3();
-    meshes.forEach((mesh) => center.add(mesh.position));
-    center.divideScalar(meshes.length || 1);
+      clonedScene.traverse((object: Object3D) => {
+        if (lensHoodParts.includes(object.name) || lensBarrelParts.includes(object.name)) {
+          const originalPosition = object.position.clone();
+          const displacement = originalPosition.clone();
 
-    meshes.forEach((mesh) => {
-      const originalPosition = mesh.position.clone();
-      const direction = originalPosition.clone().sub(center).normalize();
-      if (direction.length() === 0) {
-        direction.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-      }
-      const displaced = originalPosition.clone().add(direction.multiplyScalar(1.5));
-      data.set(mesh.uuid, { original: originalPosition.clone(), displaced });
-    });
+          if (lensHoodParts.includes(object.name)) {
+            displacement.z += explosionFactor * 4;
+          } else if (lensBarrelParts.includes(object.name)) {
+            displacement.z += explosionFactor * 2;
+          }
+
+          data.set(object.uuid, {
+            original: originalPosition,
+            displaced: displacement,
+          });
+        }
+      });
+    } else {
+      // Generic explosion for other cameras
+      const meshes: Object3D[] = [];
+      clonedScene.traverse((object: Object3D) => {
+        if ((object as any).isMesh) {
+          meshes.push(object);
+        }
+      });
+
+      const center = new Vector3();
+      meshes.forEach((mesh) => center.add(mesh.position));
+      center.divideScalar(meshes.length || 1);
+
+      meshes.forEach((mesh) => {
+        const originalPosition = mesh.position.clone();
+        const direction = originalPosition.clone().sub(center).normalize();
+        if (direction.length() === 0) {
+          direction.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+        }
+        const displaced = originalPosition.clone().add(direction.multiplyScalar(1.5));
+        data.set(mesh.uuid, { original: originalPosition.clone(), displaced });
+      });
+    }
 
     explosionDataRef.current = data;
-  }, [clonedScene]);
+  }, [clonedScene, isA7]);
 
   // Animate explosion
   useEffect(() => {
@@ -201,42 +274,11 @@ const InteractiveCameraModel = ({
         x: targetPosition.x,
         y: targetPosition.y,
         z: targetPosition.z,
-        duration: 1.2,
+        duration: 1.5,
         ease: "power2.inOut",
       });
     });
   }, [isExploded, clonedScene]);
-
-  // Handle mouse events for rotation
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    isDragging.current = true;
-    previousMouse.current = { x: e.clientX, y: e.clientY };
-    document.body.style.cursor = "grabbing";
-  };
-
-  const handlePointerUp = () => {
-    isDragging.current = false;
-    document.body.style.cursor = "grab";
-  };
-
-  const handlePointerMove = (e: any) => {
-    if (!isDragging.current || !groupRef.current) return;
-    
-    const deltaX = e.clientX - previousMouse.current.x;
-    const deltaY = e.clientY - previousMouse.current.y;
-    
-    rotation.current.y += deltaX * 0.01;
-    rotation.current.x += deltaY * 0.01;
-    
-    // Clamp vertical rotation
-    rotation.current.x = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, rotation.current.x));
-    
-    groupRef.current.rotation.y = rotation.current.y;
-    groupRef.current.rotation.x = rotation.current.x;
-    
-    previousMouse.current = { x: e.clientX, y: e.clientY };
-  };
 
   // Add global mouse event listeners
   useEffect(() => {
@@ -275,8 +317,12 @@ const InteractiveCameraModel = ({
   return (
     <group
       ref={groupRef}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        isDragging.current = true;
+        previousMouse.current = { x: e.clientX, y: e.clientY };
+        document.body.style.cursor = "grabbing";
+      }}
       onPointerOver={() => {
         if (!isDragging.current) document.body.style.cursor = "grab";
       }}
@@ -300,6 +346,7 @@ const CarouselScene = ({
   isExploded: boolean;
 }) => {
   const { camera } = useThree();
+  const groupRef = useRef<Group>(null);
 
   // Oval carousel parameters
   const radiusX = 5;
@@ -307,36 +354,37 @@ const CarouselScene = ({
   const centerZ = -9;
 
   // Calculate positions for each camera in the oval
-  const getCarouselPosition = (index: number, activeIndex: number) => {
+  const getCarouselPosition = (index: number, activeIndex: number, exploded: boolean) => {
     const totalItems = CAMERAS.length;
     const relativePos = (index - activeIndex + totalItems) % totalItems;
     const angle = (relativePos / totalItems) * Math.PI * 2;
 
-    const x = Math.sin(angle) * radiusX;
-    const z = Math.cos(angle) * radiusZ + centerZ;
+    let x = Math.sin(angle) * radiusX;
+    let z = Math.cos(angle) * radiusZ + centerZ;
 
-    // Depth factor: 0 = front, 1 = back
+    // When exploded, move active camera to the right
+    if (exploded && relativePos === 0) {
+      x = 3; // Move to right side
+      z = centerZ;
+    }
+
     const depthFactor = (1 - Math.cos(angle)) / 2;
 
-    // Scale and opacity based on position (matching Figma opacities)
     let scale: number;
     let opacity: number;
 
     if (relativePos === 0) {
-      // Front/active
-      scale = 0.7;
+      scale = exploded ? 0.9 : 0.7;
       opacity = 1;
     } else if (relativePos === 2) {
-      // Back
       scale = 0.35;
       opacity = 0.2;
     } else {
-      // Sides (left and right)
       scale = 0.45;
       opacity = 0.4;
     }
 
-    const y = depthFactor * 0.5 - 0.3;
+    const y = exploded && relativePos === 0 ? 0 : depthFactor * 0.5 - 0.3;
 
     return { position: [x, y, z] as [number, number, number], scale, opacity, depthFactor };
   };
@@ -346,9 +394,9 @@ const CarouselScene = ({
     return CAMERAS.map((cam, index) => ({
       ...cam,
       index,
-      ...getCarouselPosition(index, currentIndex),
-    })).sort((a, b) => b.depthFactor - a.depthFactor); // Back first, front last
-  }, [currentIndex]);
+      ...getCarouselPosition(index, currentIndex, isExploded),
+    })).sort((a, b) => b.depthFactor - a.depthFactor);
+  }, [currentIndex, isExploded]);
 
   // Set camera position
   useEffect(() => {
@@ -356,17 +404,18 @@ const CarouselScene = ({
     camera.lookAt(0, 0, -9);
   }, [camera]);
 
+  const currentCam = CAMERAS[currentIndex];
+
   return (
     <>
-      {/* Lighting */}
       <ambientLight intensity={0.7} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
       <directionalLight position={[-10, -10, -5]} intensity={0.3} />
       <pointLight position={[0, 5, 5]} intensity={0.5} />
       <Environment preset="city" />
 
-      {/* Render non-active cameras (static but clickable) */}
-      {sortedCameras
+      {/* Render non-active cameras (hidden when exploded) */}
+      {!isExploded && sortedCameras
         .filter((cam) => cam.index !== currentIndex)
         .map((cam) => (
           <StaticCameraModel
@@ -377,17 +426,19 @@ const CarouselScene = ({
             opacity={cam.opacity}
             baseScale={cam.baseScale}
             onClick={() => setCurrentIndex(cam.index)}
+            visible={!isExploded}
           />
         ))}
 
-      {/* Render active camera (interactive - can be rotated with mouse) */}
+      {/* Render active camera */}
       {sortedCameras
         .filter((cam) => cam.index === currentIndex)
         .map((cam) => {
           const finalScale = cam.scale * cam.baseScale;
+          const isA7 = cam.id === "sony-a7iv";
           return (
             <group key={cam.id} position={cam.position} scale={[finalScale, finalScale, finalScale]}>
-              <InteractiveCameraModel modelPath={cam.modelPath} isExploded={isExploded} />
+              <InteractiveCameraModel modelPath={cam.modelPath} isExploded={isExploded} isA7={isA7} />
             </group>
           );
         })}
@@ -400,14 +451,56 @@ CAMERAS.forEach((camera) => {
   useGLTF.preload(camera.modelPath);
 });
 
+// Specs Panel Component
+const SpecsPanel = ({ cameraId, visible }: { cameraId: string; visible: boolean }) => {
+  const specs = CAMERA_SPECS[cameraId];
+  if (!specs) return null;
+
+  return (
+    <div
+      className={`absolute left-8 top-1/2 -translate-y-1/2 w-72 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 transition-all duration-500 ${
+        visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8 pointer-events-none"
+      }`}
+    >
+      <h3 className="text-lg font-semibold text-white mb-4">Specifications</h3>
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-white/40 uppercase tracking-wider">Camera Body</p>
+          <p className="text-sm text-white">{specs.body}</p>
+        </div>
+        <div>
+          <p className="text-xs text-white/40 uppercase tracking-wider">Lens</p>
+          <p className="text-sm text-white">{specs.lens}</p>
+        </div>
+        <div>
+          <p className="text-xs text-white/40 uppercase tracking-wider">Focal Length</p>
+          <p className="text-sm text-white">{specs.focalLength}</p>
+        </div>
+        <div>
+          <p className="text-xs text-white/40 uppercase tracking-wider">ISO Range</p>
+          <p className="text-sm text-white">{specs.iso}</p>
+        </div>
+        <div>
+          <p className="text-xs text-white/40 uppercase tracking-wider">Sensor</p>
+          <p className="text-sm text-white">{specs.sensor}</p>
+        </div>
+        <div>
+          <p className="text-xs text-white/40 uppercase tracking-wider">Resolution</p>
+          <p className="text-sm text-white">{specs.resolution}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const CameraCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isExploded, setIsExploded] = useState(false);
 
-  // Touch handling for swipe
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastWheelTime = useRef(0);
 
   const currentCamera = CAMERAS[currentIndex];
 
@@ -448,15 +541,37 @@ export const CameraCarousel = () => {
     }
   };
 
-  // Keyboard navigation
+  // Horizontal scroll (two-finger trackpad) handler
+  const handleWheel = useCallback((e: WheelEvent) => {
+    // Only respond to horizontal scroll
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 30) {
+      const now = Date.now();
+      if (now - lastWheelTime.current > 300) { // Debounce
+        lastWheelTime.current = now;
+        if (e.deltaX > 0) {
+          goNext();
+        } else {
+          goPrev();
+        }
+      }
+    }
+  }, [goNext, goPrev]);
+
+  // Keyboard and wheel navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") goPrev();
       else if (e.key === "ArrowRight") goNext();
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goNext, goPrev]);
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [goNext, goPrev, handleWheel]);
 
   return (
     <div
@@ -473,37 +588,44 @@ export const CameraCarousel = () => {
         </Suspense>
       </Canvas>
 
-      {/* Camera name overlay */}
-      <div className="absolute top-12 left-1/2 -translate-x-1/2 text-center pointer-events-none">
+      {/* Specs Panel (visible when exploded) */}
+      <SpecsPanel cameraId={currentCamera.id} visible={isExploded} />
+
+      {/* Camera name overlay (hide when exploded) */}
+      <div className={`absolute top-12 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-opacity duration-300 ${isExploded ? "opacity-0" : "opacity-100"}`}>
         <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">
           {currentCamera.name}
         </h1>
         <p className="text-white/50 text-sm mt-1">{currentCamera.description}</p>
       </div>
 
-      {/* Navigation arrows */}
-      <button
-        onClick={goPrev}
-        className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10"
-        aria-label="Previous camera"
-      >
-        <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+      {/* Navigation arrows (hide when exploded) */}
+      {!isExploded && (
+        <>
+          <button
+            onClick={goPrev}
+            className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+            aria-label="Previous camera"
+          >
+            <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
 
-      <button
-        onClick={goNext}
-        className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10"
-        aria-label="Next camera"
-      >
-        <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+          <button
+            onClick={goNext}
+            className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+            aria-label="Next camera"
+          >
+            <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </>
+      )}
 
-      {/* Explode button */}
-      <div className="absolute bottom-28 left-1/2 -translate-x-1/2">
+      {/* Explode button - more padding from timeline */}
+      <div className="absolute bottom-40 left-1/2 -translate-x-1/2">
         <button
           onClick={() => setIsExploded(!isExploded)}
           className="px-8 py-3 bg-[#B0FBCD]/10 hover:bg-[#B0FBCD]/20 border border-[#B0FBCD]/30 rounded-full text-[#B0FBCD] text-sm font-medium transition-all duration-300"
@@ -512,19 +634,15 @@ export const CameraCarousel = () => {
         </button>
       </div>
 
-      {/* Horizontal Timeline */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-xl px-8">
+      {/* Horizontal Timeline (hide when exploded) */}
+      <div className={`absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-xl px-8 transition-opacity duration-300 ${isExploded ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <div className="relative">
-          {/* Timeline line */}
           <div className="absolute top-[10px] left-8 right-8 h-[1px] bg-white/20" />
-
-          {/* Progress line */}
           <div
-            className="absolute top-[10px] left-8 h-[1px] bg-[#FBF4B0]/60 transition-all duration-500"
+            className="absolute top-[10px] left-8 h-[1px] bg-white/40 transition-all duration-500"
             style={{ width: `calc(${(currentIndex / (CAMERAS.length - 1)) * 100}% * 0.85)` }}
           />
 
-          {/* Timeline dots */}
           <div className="relative flex justify-between px-4">
             {CAMERAS.map((camera, index) => (
               <button
@@ -532,7 +650,6 @@ export const CameraCarousel = () => {
                 onClick={() => goToCamera(index)}
                 className="flex flex-col items-center group"
               >
-                {/* Dot */}
                 <div
                   className={`w-5 h-5 rounded-full transition-all duration-300 ${
                     index === currentIndex
@@ -540,8 +657,6 @@ export const CameraCarousel = () => {
                       : "bg-white/30 group-hover:bg-white/50"
                   }`}
                 />
-
-                {/* Date label */}
                 <span
                   className={`mt-3 text-sm font-medium transition-all duration-300 ${
                     index === currentIndex ? "text-white" : "text-white/40 group-hover:text-white/60"
@@ -549,8 +664,6 @@ export const CameraCarousel = () => {
                 >
                   {camera.date}
                 </span>
-
-                {/* Camera name - only show for active */}
                 {index === currentIndex && (
                   <span className="mt-1 text-xs text-white/60">
                     {camera.name}
