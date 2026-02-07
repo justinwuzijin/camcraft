@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  detectPinch,
+  detectPictureFrame,
+  getPictureFrameDebug,
+  PINCH_DISTANCE_THRESHOLD,
+  ROTATE_SENSITIVITY,
+  PICTURE_FRAME_HOLD_MS,
+  PICTURE_FRAME_COOLDOWN_MS,
+} from "./gestures";
 
 const WASM_BASE =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm";
@@ -10,11 +19,6 @@ const MODEL_URL =
 const PREVIEW_WIDTH = 370;
 const PREVIEW_HEIGHT = 240;
 
-const THUMB_TIP = 4;
-const INDEX_TIP = 8;
-const PINCH_DISTANCE_THRESHOLD = 0.08;
-const ROTATE_SENSITIVITY = 4;
-
 export type GestureDeltaRef = React.MutableRefObject<{
   deltaAzimuth: number;
   deltaPolar: number;
@@ -22,29 +26,21 @@ export type GestureDeltaRef = React.MutableRefObject<{
 
 type HandOverlayProps = {
   gestureDeltaRef?: GestureDeltaRef;
+  onPictureFrame?: () => void;
 };
 
-function pinchCenterAndDistance(landmarks: { x: number; y: number }[]) {
-  const thumb = landmarks[THUMB_TIP];
-  const index = landmarks[INDEX_TIP];
-  if (!thumb || !index) return null;
-  const dx = thumb.x - index.x;
-  const dy = thumb.y - index.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  return {
-    x: (thumb.x + index.x) / 2,
-    y: (thumb.y + index.y) / 2,
-    distance,
-  };
-}
-
-export default function HandOverlay({ gestureDeltaRef }: HandOverlayProps) {
+export default function HandOverlay({
+  gestureDeltaRef,
+  onPictureFrame,
+}: HandOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const lastPinchCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const pictureFrameHoldStartRef = useRef<number | null>(null);
+  const pictureFrameLastFiredRef = useRef<number>(0);
   const logBoxRef = useRef<HTMLDivElement>(null);
   const handLandmarkerRef = useRef<{
     detectForVideo: (
@@ -208,6 +204,7 @@ export default function HandOverlay({ gestureDeltaRef }: HandOverlayProps) {
             logBoxRef.current.innerHTML = [
               "Hands detected: -",
               "Pinch: -",
+              "Picture frame: -",
               "Camera: on",
               `Error: ${msg}`,
             ].join("<br>");
@@ -223,7 +220,7 @@ export default function HandOverlay({ gestureDeltaRef }: HandOverlayProps) {
 
         let pinching: { x: number; y: number } | null = null;
         for (const hand of result.landmarks) {
-          const pinch = pinchCenterAndDistance(hand);
+          const pinch = detectPinch(hand);
           if (pinch && pinch.distance < PINCH_DISTANCE_THRESHOLD) {
             pinching = { x: pinch.x, y: pinch.y };
             break;
@@ -245,11 +242,49 @@ export default function HandOverlay({ gestureDeltaRef }: HandOverlayProps) {
           }
         }
 
+        const bothHandsPictureFrame = detectPictureFrame(result.landmarks);
+        const pictureFrameDebug = getPictureFrameDebug(result.landmarks);
+        if (bothHandsPictureFrame) {
+          if (pictureFrameHoldStartRef.current === null) {
+            pictureFrameHoldStartRef.current = now;
+          }
+          const held = now - pictureFrameHoldStartRef.current;
+          const cooldownPassed =
+            now - pictureFrameLastFiredRef.current >= PICTURE_FRAME_COOLDOWN_MS;
+          if (
+            held >= PICTURE_FRAME_HOLD_MS &&
+            cooldownPassed &&
+            onPictureFrame
+          ) {
+            pictureFrameLastFiredRef.current = now;
+            onPictureFrame();
+          }
+        } else {
+          pictureFrameHoldStartRef.current = null;
+        }
+
         if (logBoxRef.current) {
           const handsCount = result.landmarks.length;
+          const pfLines =
+            pictureFrameDebug.length === 0
+              ? ["PF: (no hands)"]
+              : pictureFrameDebug.map((h, i) => {
+                  const fails: string[] = [];
+                  if (!h.indexExtended) fails.push("idx");
+                  if (!h.thumbExtended) fails.push("thumb");
+                  if (!h.thumbIndexSpread) fails.push("spread");
+                  if (!h.middleCurl) fails.push("mid");
+                  if (!h.ringCurl) fails.push("ring");
+                  if (!h.pinkyCurl) fails.push("pink");
+                  const status =
+                    fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
+                  return `PF hand ${i}: ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`;
+                });
           const logText = [
             `Hands detected: ${handsCount}`,
             `Pinch: ${pinching ? "yes" : "no"}`,
+            `Picture frame: ${bothHandsPictureFrame ? "yes" : "no"}`,
+            ...pfLines,
             "Camera: on",
           ].join("<br>");
           if (logText !== lastLogRef.current) {
@@ -265,7 +300,7 @@ export default function HandOverlay({ gestureDeltaRef }: HandOverlayProps) {
       resizeObserver.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [ready, gestureDeltaRef]);
+  }, [ready, gestureDeltaRef, onPictureFrame]);
 
   if (error) {
     return (
@@ -295,6 +330,8 @@ export default function HandOverlay({ gestureDeltaRef }: HandOverlayProps) {
         Hands detected: -
         <br />
         Pinch: -
+        <br />
+        Picture frame: -
         <br />
         Camera: starting...
       </div>
