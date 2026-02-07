@@ -7,6 +7,7 @@ import {
   getPictureFrameDebug,
   PINCH_DISTANCE_THRESHOLD,
   ROTATE_SENSITIVITY,
+  PINCH_DEAD_ZONE,
   PICTURE_FRAME_HOLD_MS,
   PICTURE_FRAME_COOLDOWN_MS,
 } from "./gestures";
@@ -39,6 +40,8 @@ export default function HandOverlay({
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const lastPinchCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const smoothPinchRef = useRef<{ x: number; y: number } | null>(null);
+  const EMA_ALPHA = 0.35; // lower = smoother but laggier
   const pictureFrameHoldStartRef = useRef<number | null>(null);
   const pictureFrameLastFiredRef = useRef<number>(0);
   const logBoxRef = useRef<HTMLDivElement>(null);
@@ -229,16 +232,30 @@ export default function HandOverlay({
 
         if (gestureDeltaRef?.current) {
           if (pinching) {
+            // EMA smooth the raw pinch position to reduce hand jitter
+            const prev = smoothPinchRef.current;
+            const smoothed = prev
+              ? {
+                  x: prev.x + EMA_ALPHA * (pinching.x - prev.x),
+                  y: prev.y + EMA_ALPHA * (pinching.y - prev.y),
+                }
+              : pinching;
+            smoothPinchRef.current = smoothed;
+
             const last = lastPinchCenterRef.current;
             if (last !== null) {
-              const deltaX = pinching.x - last.x;
-              const deltaY = pinching.y - last.y;
-              gestureDeltaRef.current.deltaAzimuth += deltaX * ROTATE_SENSITIVITY;
-              gestureDeltaRef.current.deltaPolar += -deltaY * ROTATE_SENSITIVITY;
+              const deltaX = smoothed.x - last.x;
+              const deltaY = smoothed.y - last.y;
+              // Dead zone: ignore tiny deltas from jitter
+              if (Math.abs(deltaX) > PINCH_DEAD_ZONE)
+                gestureDeltaRef.current.deltaAzimuth += deltaX * ROTATE_SENSITIVITY;
+              if (Math.abs(deltaY) > PINCH_DEAD_ZONE)
+                gestureDeltaRef.current.deltaPolar += -deltaY * ROTATE_SENSITIVITY;
             }
-            lastPinchCenterRef.current = pinching;
+            lastPinchCenterRef.current = smoothed;
           } else {
             lastPinchCenterRef.current = null;
+            smoothPinchRef.current = null;
           }
         }
 
