@@ -38,12 +38,6 @@ export default function PanoPage() {
   return (
     <div className="relative w-full min-h-screen bg-black">
       <PanoViewer gestureDeltaRef={gestureDeltaRef} />
-      <HandOverlay
-        gestureDeltaRef={gestureDeltaRef}
-        onPictureFrame={onPictureFrame}
-        onFistOpen={onFistOpen}
-        cameraOverlayActive={cameraOverlayActive}
-      />
       {/* Big camera overlay — toggled by fist→open gesture */}
       <div
         className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-all duration-500 ${
@@ -53,12 +47,32 @@ export default function PanoPage() {
         }`}
         aria-hidden
       >
-        <img
-          src="/camera_pov.png"
-          alt=""
-          className="h-[90vh] w-auto max-w-[95vw] object-contain"
-        />
+        <div className="relative">
+          {flash && (
+            <div
+              className="absolute bg-white/80"
+              style={{
+                left: "20%",
+                top: "37%",
+                width: "40%",
+                height: "50%",
+              }}
+              aria-hidden
+            />
+          )}
+          <img
+            src="/camera_pov.png"
+            alt=""
+            className="relative z-[1] h-[90vh] w-auto max-w-[95vw] object-contain"
+          />
+        </div>
       </div>
+      <HandOverlay
+        gestureDeltaRef={gestureDeltaRef}
+        onPictureFrame={onPictureFrame}
+        onFistOpen={onFistOpen}
+        cameraOverlayActive={cameraOverlayActive}
+      />
       {/* Small camera overlay — always visible */}
       <img
         src="/camera_pov.png"
@@ -66,12 +80,6 @@ export default function PanoPage() {
         className="pointer-events-none absolute bottom-8 left-1/2 z-10 w-48 -translate-x-1/2 object-contain"
         aria-hidden
       />
-      {flash && (
-        <div
-          className="pointer-events-none absolute inset-0 z-20 bg-white/80"
-          aria-hidden
-        />
-      )}
     </div>
   );
 }

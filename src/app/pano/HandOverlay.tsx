@@ -385,7 +385,7 @@ export default function HandOverlay({
     <>
       <div
         ref={containerRef}
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 z-20"
         aria-hidden
       >
         <canvas
@@ -395,7 +395,7 @@ export default function HandOverlay({
       </div>
       <div
         ref={logBoxRef}
-        className="absolute left-4 top-4 rounded-lg border border-white/20 bg-black/80 px-3 py-2 font-mono text-xs text-white shadow-lg"
+        className="absolute left-4 top-4 z-20 rounded-lg border border-white/20 bg-black/80 px-3 py-2 font-mono text-xs text-white shadow-lg"
         aria-live="polite"
       >
         Hands detected: -
@@ -406,7 +406,7 @@ export default function HandOverlay({
         <br />
         Camera: starting...
       </div>
-      <div className="absolute bottom-4 right-4 overflow-hidden rounded-lg border border-white/20 bg-black shadow-lg">
+      <div className="absolute bottom-4 right-4 z-20 overflow-hidden rounded-lg border border-white/20 bg-black shadow-lg">
         <div
           className="relative"
           style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }}
