@@ -13,16 +13,30 @@ const PanoViewer = dynamic(() => import("./PanoViewer"), {
   ),
 });
 
+const SHUTTER_SOUND = "/sony_shutter.mp3";
+
 export default function PanoPage() {
   const gestureDeltaRef = useRef<{
     deltaAzimuth: number;
     deltaPolar: number;
   }>({ deltaAzimuth: 0, deltaPolar: 0 });
+  const shutterAudioRef = useRef<HTMLAudioElement | null>(null);
   const [flash, setFlash] = useState(false);
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false);
 
   const onPictureFrame = useCallback(() => {
     setFlash(true);
+    try {
+      if (!shutterAudioRef.current) {
+        shutterAudioRef.current = new Audio(SHUTTER_SOUND);
+      }
+      const audio = shutterAudioRef.current;
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    } catch {
+      // ignore if audio fails (e.g. autoplay policy)
+    }
   }, []);
 
   const onFistOpen = useCallback(() => {

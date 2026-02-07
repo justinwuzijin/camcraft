@@ -13,11 +13,12 @@ export type GestureDeltaRef = React.MutableRefObject<{
 
 type PanoViewerProps = {
   gestureDeltaRef?: GestureDeltaRef;
+  panoUrl?: string;
 };
 
 const GESTURE_ROTATE_SCALE = 2;
 
-export default function PanoViewer({ gestureDeltaRef }: PanoViewerProps) {
+export default function PanoViewer({ gestureDeltaRef, panoUrl }: PanoViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gestureRefRef = useRef(gestureDeltaRef);
   gestureRefRef.current = gestureDeltaRef;
@@ -43,7 +44,8 @@ export default function PanoViewer({ gestureDeltaRef }: PanoViewerProps) {
     geometry.scale(-1, 1, 1);
 
     const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load(PANO_PATH, undefined, undefined, (err) => {
+    const textureSrc = panoUrl || PANO_PATH;
+    const texture = textureLoader.load(textureSrc, undefined, undefined, (err) => {
       console.error("Failed to load panorama:", err);
     });
     texture.mapping = THREE.EquirectangularReflectionMapping;
