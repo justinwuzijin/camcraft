@@ -37,9 +37,15 @@ export default function PanoPage() {
         gestureDeltaRef={gestureDeltaRef}
         onPictureFrame={onPictureFrame}
       />
+      <img
+        src="/camera_pov.png"
+        alt=""
+        className="pointer-events-none absolute bottom-8 left-1/2 z-10 w-48 -translate-x-1/2 object-contain"
+        aria-hidden
+      />
       {flash && (
         <div
-          className="pointer-events-none absolute inset-0 bg-white/80"
+          className="pointer-events-none absolute inset-0 z-20 bg-white/80"
           aria-hidden
         />
       )}
