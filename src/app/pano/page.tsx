@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import dynamic from "next/dynamic";
+import HandOverlay from "./HandOverlay";
 
 const PanoViewer = dynamic(() => import("./PanoViewer"), {
   ssr: false,
@@ -12,9 +14,15 @@ const PanoViewer = dynamic(() => import("./PanoViewer"), {
 });
 
 export default function PanoPage() {
+  const gestureDeltaRef = useRef<{
+    deltaAzimuth: number;
+    deltaPolar: number;
+  }>({ deltaAzimuth: 0, deltaPolar: 0 });
+
   return (
     <div className="relative w-full min-h-screen bg-black">
-      <PanoViewer />
+      <PanoViewer gestureDeltaRef={gestureDeltaRef} />
+      <HandOverlay gestureDeltaRef={gestureDeltaRef} />
     </div>
   );
 }

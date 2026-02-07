@@ -6,8 +6,21 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const PANO_PATH = "/pano_test2.png";
 
-export default function PanoViewer() {
+export type GestureDeltaRef = React.MutableRefObject<{
+  deltaAzimuth: number;
+  deltaPolar: number;
+} | null>;
+
+type PanoViewerProps = {
+  gestureDeltaRef?: GestureDeltaRef;
+};
+
+const GESTURE_ROTATE_SCALE = 2;
+
+export default function PanoViewer({ gestureDeltaRef }: PanoViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const gestureRefRef = useRef(gestureDeltaRef);
+  gestureRefRef.current = gestureDeltaRef;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -62,7 +75,30 @@ export default function PanoViewer() {
 
     window.addEventListener("resize", onResize);
 
+    const offset = new THREE.Vector3();
+    const spherical = new THREE.Spherical();
+
     function animate() {
+      const ref = gestureRefRef.current?.current;
+      if (ref && (ref.deltaAzimuth !== 0 || ref.deltaPolar !== 0)) {
+        const scale = GESTURE_ROTATE_SCALE;
+        // Compute current spherical position relative to target
+        offset.copy(camera.position).sub(controls.target);
+        spherical.setFromVector3(offset);
+        // Apply gesture deltas directly
+        spherical.theta -= ref.deltaAzimuth * scale;
+        spherical.phi -= ref.deltaPolar * scale;
+        spherical.phi = Math.max(
+          controls.minPolarAngle,
+          Math.min(controls.maxPolarAngle, spherical.phi)
+        );
+        spherical.makeSafe();
+        offset.setFromSpherical(spherical);
+        camera.position.copy(controls.target).add(offset);
+        camera.lookAt(controls.target);
+        ref.deltaAzimuth = 0;
+        ref.deltaPolar = 0;
+      }
       requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
