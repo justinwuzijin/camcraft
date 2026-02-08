@@ -174,8 +174,8 @@ const CAMERA_EQUIPMENT: Record<string, CameraLoadout> = {
 // Part labels for exploded view - each camera has labels that track with 3D rotation
 const PART_LABELS: Record<string, { name: string; fact: string; position: [number, number, number] }[]> = {
   "sony-a7iv": [
-    { name: "Lens Hood", fact: "Reduces lens flare and protects the front element", position: [-0.5, 0.6, 8] },
-    { name: "Lens Barrel", fact: "Houses 18 elements in 14 groups for sharp optics", position: [1.2, -0.5, 5] },
+    { name: "Lens Hood", fact: "Reduces lens flare and protects the front element", position: [-0.8, 0.6, 8] },
+    { name: "Lens Barrel", fact: "Houses 18 elements in 14 groups for sharp optics", position: [0.3, -0.4, 2] },
     { name: "Camera Body", fact: "33MP full-frame sensor with 5-axis stabilization", position: [1.5, 0.5, -1] },
   ],
   "sony-handycam": [
@@ -680,7 +680,7 @@ const SpecsPanel = ({ cameraId, visible }: { cameraId: string; visible: boolean 
 
   return (
     <div
-      className={`absolute left-[15%] top-1/2 -translate-y-1/2 w-[420px] bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/[0.06] rounded-xl p-8 transition-all duration-500 ${
+      className={`absolute left-[8%] top-1/2 -translate-y-1/2 w-[420px] bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/[0.06] rounded-xl p-8 transition-all duration-500 ${
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8 pointer-events-none"
       }`}
     >

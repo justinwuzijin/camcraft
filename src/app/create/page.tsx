@@ -5,6 +5,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { NavButton } from "@/components/NavButton";
 
 // Loading component for 3D content
 function LoadingSpinner() {
