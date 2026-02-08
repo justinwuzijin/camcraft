@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NavButton } from "@/components/NavButton";
 
 // Dynamically import CameraCarousel with SSR disabled
@@ -103,6 +103,16 @@ function ShutterOpenOverlay() {
 }
 
 export default function CreatePage() {
+  const playCarouselSound = useCallback(() => {
+    const audio = new Audio("/carousel.mp3");
+    audio.play().catch(() => {});
+  }, []);
+
+  const playConfirmSound = useCallback(() => {
+    const audio = new Audio("/confirm_button.mp3");
+    audio.play().catch(() => {});
+  }, []);
+
   return (
     <>
       {/* Shutter opening animation */}
@@ -114,7 +124,7 @@ export default function CreatePage() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
       >
-        <CameraCarousel />
+        <CameraCarousel onCarouselChange={playCarouselSound} onTryOutClick={playConfirmSound} />
 
         {/* Header overlay — matches Generate page style */}
         <header className="pointer-events-auto absolute top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">

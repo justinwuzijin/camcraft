@@ -711,7 +711,12 @@ const SpecsPanel = ({ cameraId, visible }: { cameraId: string; visible: boolean 
   );
 };
 
-export const CameraCarousel = () => {
+type CameraCarouselProps = {
+  onCarouselChange?: (fromIndex: number, toIndex: number) => void;
+  onTryOutClick?: () => void;
+};
+
+export const CameraCarousel = ({ onCarouselChange, onTryOutClick }: CameraCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isExploded, setIsExploded] = useState(false);
 
@@ -725,10 +730,11 @@ export const CameraCarousel = () => {
   const goToCamera = useCallback(
     (index: number) => {
       if (index === currentIndex) return;
+      onCarouselChange?.(currentIndex, index);
       setIsExploded(false);
       setCurrentIndex(index);
     },
-    [currentIndex]
+    [currentIndex, onCarouselChange]
   );
 
   const goNext = useCallback(() => {
@@ -915,6 +921,7 @@ export const CameraCarousel = () => {
         {isExploded ? (
           <Link
             href="/generate"
+            onClick={() => onTryOutClick?.()}
             className="group relative inline-block px-10 py-3.5 bg-[#B0FBCD]/[0.08] hover:bg-[#B0FBCD]/[0.14] border border-[#B0FBCD]/20 hover:border-[#B0FBCD]/35 rounded-lg text-[#B0FBCD]/80 hover:text-[#B0FBCD] text-sm tracking-wider uppercase transition-all duration-300"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >

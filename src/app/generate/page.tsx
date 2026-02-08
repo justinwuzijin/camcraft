@@ -673,6 +673,8 @@ export default function GeneratePage() {
   }, []);
 
   const handleGenerate = useCallback(async () => {
+    const audio = new Audio("/confirm_button.mp3");
+    audio.play().catch(() => {});
     setIsGenerating(true);
     setError(null);
     setShowTutorial(true);
