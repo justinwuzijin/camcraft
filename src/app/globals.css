@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --brand: #B0FBCD;
 }
 
 @theme inline {
@@ -23,4 +24,31 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes badgePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.35); box-shadow: 0 0 12px rgba(176, 251, 205, 0.6); }
+  100% { transform: scale(1); }
+}
+
+/* Landing page animations */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes filmScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes sonarPing {
+  0%   { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes flareSweep {
+  0%, 100% { background-position: -50% 0; }
+  50%      { background-position: 150% 0; }
 }

@@ -2,11 +2,13 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { NavButton } from "@/components/NavButton";
+import PhotoFlyAnimation from "@/components/PhotoFlyAnimation";
 import HandOverlay from "./HandOverlay";
 import SonyViewfinderHUD from "@/components/SonyViewfinderHUD";
 import { addGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
+import { getUnseenCount, incrementUnseen } from "@/lib/galleryBadgeStore";
 
 const PanoViewer = dynamic(() => import("./PanoViewer"), {
   ssr: false,
@@ -39,10 +41,18 @@ export default function PanoPage() {
   const captureRef = useRef<(() => string | null) | null>(null);
   const shutterAudioRef = useRef<HTMLAudioElement | null>(null);
   const focusAudioRef = useRef<HTMLAudioElement | null>(null);
+  const galleryBtnRef = useRef<HTMLAnchorElement | null>(null);
+  const viewfinderRef = useRef<HTMLDivElement | null>(null);
   const [flash, setFlash] = useState(false);
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false);
   const [focusLoading, setFocusLoading] = useState(false);
   const [focusImage, setFocusImage] = useState<string | null>(null);
+  const [badgeCount, setBadgeCount] = useState(0);
+  const [badgePulse, setBadgePulse] = useState(false);
+  const [flyAnimation, setFlyAnimation] = useState<{
+    imageUrl: string;
+    fromRect: DOMRect;
+  } | null>(null);
   // Base64 data of the focused image (kept in memory until captured)
   const focusBase64Ref = useRef<{ data: string; mimeType: string } | null>(null);
 
@@ -51,10 +61,27 @@ export default function PanoPage() {
   const focusLoadingRef = useRef(false);
   focusLoadingRef.current = focusLoading;
 
+  // Load badge count on mount
+  useEffect(() => {
+    setBadgeCount(getUnseenCount());
+  }, []);
+
+  const handleFlyComplete = useCallback(() => {
+    setFlyAnimation(null);
+    incrementUnseen();
+    setBadgeCount(getUnseenCount());
+    setBadgePulse(true);
+    setTimeout(() => setBadgePulse(false), 600);
+  }, []);
+
   const onPictureFrame = useCallback(() => {
     const img = focusImageRef.current;
     const base64 = focusBase64Ref.current;
     if (!img || !base64) return; // only save when focused
+
+    // Capture the viewfinder rect before flash clears the image
+    const vfRect = viewfinderRef.current?.getBoundingClientRect();
+    const capturedImage = img;
 
     setFlash(true);
     try {
@@ -111,6 +138,13 @@ export default function PanoPage() {
     // Clear the focus image after capturing
     setFocusImage(null);
     focusBase64Ref.current = null;
+
+    // Start fly animation after flash fades
+    if (vfRect) {
+      setTimeout(() => {
+        setFlyAnimation({ imageUrl: capturedImage, fromRect: vfRect });
+      }, 250);
+    }
   }, []);
 
   const onFistOpen = useCallback(() => {
@@ -220,6 +254,7 @@ export default function PanoPage() {
           {/* Focus loading / result in viewfinder screen */}
           {(focusLoading || focusImage) && (
             <div
+              ref={viewfinderRef}
               className="absolute overflow-hidden"
               style={{
                 left: `${VF_LEFT * 100}%`,
@@ -273,23 +308,31 @@ export default function PanoPage() {
         onFocus={onFocus}
         cameraOverlayActive={cameraOverlayActive}
       />
-      
+
       {/* Camera Equipment HUD - Minecraft-style armor slots */}
       <CameraEquipmentHUD position="left" />
-      
+
       {/* Gallery button */}
-      <Link
+      <NavButton
+        ref={galleryBtnRef}
         href="/gallery"
-        className="absolute top-5 right-5 z-30 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-black/80 transition-all"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-          <rect x="1" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-          <rect x="7" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-          <rect x="1" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-          <rect x="7" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-        </svg>
-        Gallery
-      </Link>
+        icon="gallery"
+        label="Gallery"
+        variant="overlay"
+        className="absolute top-5 right-5 z-30"
+        badgeCount={badgeCount}
+        badgePulse={badgePulse}
+      />
+
+      {/* Photo fly animation */}
+      {flyAnimation && (
+        <PhotoFlyAnimation
+          imageUrl={flyAnimation.imageUrl}
+          fromRect={flyAnimation.fromRect}
+          toRef={galleryBtnRef}
+          onComplete={handleFlyComplete}
+        />
+      )}
 
       {/* Small camera overlay — always visible */}
       <img

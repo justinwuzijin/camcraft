@@ -2,13 +2,15 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { NavButton } from "@/components/NavButton";
+import PhotoFlyAnimation from "@/components/PhotoFlyAnimation";
 import CityAutocomplete from "./CityAutocomplete";
 import HandOverlay from "@/app/pano/HandOverlay";
 import SonyViewfinderHUD from "@/components/SonyViewfinderHUD";
 import GestureTutorial from "@/components/GestureTutorial";
 import { addGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
+import { getUnseenCount, incrementUnseen } from "@/lib/galleryBadgeStore";
 
 const PanoViewer = dynamic(() => import("@/app/pano/PanoViewer"), {
   ssr: false,
@@ -444,10 +446,18 @@ export default function GeneratePage() {
   const captureRef = useRef<(() => string | null) | null>(null);
   const shutterAudioRef = useRef<HTMLAudioElement | null>(null);
   const focusAudioRef = useRef<HTMLAudioElement | null>(null);
+  const galleryBtnRef = useRef<HTMLAnchorElement | null>(null);
+  const viewfinderRef = useRef<HTMLDivElement | null>(null);
   const [flash, setFlash] = useState(false);
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false);
   const [focusLoading, setFocusLoading] = useState(false);
   const [focusImage, setFocusImage] = useState<string | null>(null);
+  const [badgeCount, setBadgeCount] = useState(0);
+  const [badgePulse, setBadgePulse] = useState(false);
+  const [flyAnimation, setFlyAnimation] = useState<{
+    imageUrl: string;
+    fromRect: DOMRect;
+  } | null>(null);
   // Base64 data of the focused image (kept in memory until captured)
   const focusBase64Ref = useRef<{ data: string; mimeType: string } | null>(null);
 
@@ -456,10 +466,27 @@ export default function GeneratePage() {
   const focusLoadingRef = useRef(false);
   focusLoadingRef.current = focusLoading;
 
+  // Load badge count on mount
+  useEffect(() => {
+    setBadgeCount(getUnseenCount());
+  }, []);
+
+  const handleFlyComplete = useCallback(() => {
+    setFlyAnimation(null);
+    incrementUnseen();
+    setBadgeCount(getUnseenCount());
+    setBadgePulse(true);
+    setTimeout(() => setBadgePulse(false), 600);
+  }, []);
+
   const onPictureFrame = useCallback(() => {
     const img = focusImageRef.current;
     const base64 = focusBase64Ref.current;
     if (!img || !base64) return; // only save when focused
+
+    // Capture the viewfinder rect before flash clears the image
+    const vfRect = viewfinderRef.current?.getBoundingClientRect();
+    const capturedImage = img;
 
     setFlash(true);
     try {
@@ -532,6 +559,13 @@ export default function GeneratePage() {
     // Clear the focus image after capturing
     setFocusImage(null);
     focusBase64Ref.current = null;
+
+    // Start fly animation after flash fades
+    if (vfRect) {
+      setTimeout(() => {
+        setFlyAnimation({ imageUrl: capturedImage, fromRect: vfRect });
+      }, 250);
+    }
   }, [resolvedParams]);
 
   const onFistOpen = useCallback(() => {
@@ -721,6 +755,7 @@ export default function GeneratePage() {
             {/* Focus loading / result in viewfinder screen */}
             {(focusLoading || focusImage) && (
               <div
+                ref={viewfinderRef}
                 className="absolute overflow-hidden"
                 style={{
                   left: `${VF_LEFT * 100}%`,
@@ -785,30 +820,44 @@ export default function GeneratePage() {
           aria-hidden
         />
 
-        {/* Back button */}
-        <button
-          onClick={() => setShowViewer(false)}
-          className="absolute top-5 left-5 z-30 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-black/80 transition-all"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Back
-        </button>
+        {/* Navigation buttons */}
+        <div className="absolute top-5 left-5 z-30 flex items-center gap-2">
+          <NavButton
+            href=""
+            icon="back"
+            label="Back"
+            variant="overlay"
+            onClick={() => {
+              setShowViewer(false);
+              setTutorialDismissed(false);
+              if (panoUrl) URL.revokeObjectURL(panoUrl);
+              setPanoUrl(null);
+              setResolvedParams(null);
+              setFocusImage(null);
+              focusBase64Ref.current = null;
+              setCameraOverlayActive(false);
+            }}
+          />
+          <NavButton
+            ref={galleryBtnRef}
+            href="/gallery"
+            icon="gallery"
+            label="Gallery"
+            variant="overlay"
+            badgeCount={badgeCount}
+            badgePulse={badgePulse}
+          />
+        </div>
 
-        {/* Gallery button */}
-        <Link
-          href="/gallery"
-          className="absolute top-5 left-[120px] z-30 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-black/80 transition-all"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-            <rect x="1" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-            <rect x="7" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-            <rect x="1" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-            <rect x="7" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-          </svg>
-          Gallery
-        </Link>
+        {/* Photo fly animation */}
+        {flyAnimation && (
+          <PhotoFlyAnimation
+            imageUrl={flyAnimation.imageUrl}
+            fromRect={flyAnimation.fromRect}
+            toRef={galleryBtnRef}
+            onComplete={handleFlyComplete}
+          />
+        )}
 
         {/* Scene info panel */}
         {resolvedParams && Object.keys(resolvedParams).length > 0 && (
@@ -834,27 +883,7 @@ export default function GeneratePage() {
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="group flex items-center gap-2 text-white/40 transition-colors hover:text-white/70"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                className="transition-transform group-hover:-translate-x-0.5"
-              >
-                <path
-                  d="M11 13L7 9L11 5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-sm tracking-wide">Back</span>
-            </Link>
+            <NavButton href="/" icon="back" label="Back" variant="header" />
             <div className="h-4 w-px bg-white/[0.08]" />
             <h1
               className="text-sm tracking-[0.25em] uppercase text-white/70"
@@ -864,23 +893,7 @@ export default function GeneratePage() {
             </h1>
           </div>
 
-          <Link
-            href="/gallery"
-            className="flex items-center gap-2 text-white/30 transition-colors hover:text-white/60"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
-              <rect x="1" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-              <rect x="7" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-              <rect x="1" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-              <rect x="7" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-            </svg>
-            <span
-              className="text-xs tracking-wider"
-              style={{ fontFamily: "var(--font-geist-mono)" }}
-            >
-              Gallery
-            </span>
-          </Link>
+          <NavButton href="/gallery" icon="gallery" label="Gallery" variant="header" badgeCount={badgeCount} />
         </div>
       </header>
 

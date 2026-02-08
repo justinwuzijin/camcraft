@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { NavButton } from "@/components/NavButton";
 import { getGalleryEntries, removeGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
+import { resetUnseen } from "@/lib/galleryBadgeStore";
 
 type ServerImage = {
   filename: string;
@@ -61,6 +63,7 @@ export default function GalleryPage() {
 
   // Load gallery items: merge localStorage metadata with server files
   useEffect(() => {
+    resetUnseen();
     async function load() {
       const [localEntries, serverRes] = await Promise.all([
         Promise.resolve(getGalleryEntries()),
@@ -187,27 +190,7 @@ export default function GalleryPage() {
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
           <div className="flex items-center gap-4">
-            <Link
-              href="/generate"
-              className="group flex items-center gap-2 text-white/40 transition-colors hover:text-white/70"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                className="transition-transform group-hover:-translate-x-0.5"
-              >
-                <path
-                  d="M11 13L7 9L11 5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-sm tracking-wide">Back</span>
-            </Link>
+            <NavButton href="/generate" icon="back" label="Back" variant="header" />
             <div className="h-4 w-px bg-white/[0.08]" />
             <h1
               className="text-sm tracking-[0.25em] uppercase text-white/70"

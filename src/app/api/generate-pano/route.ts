@@ -10,30 +10,43 @@ function slugify(str: string): string {
     .slice(0, 30);
 }
 
-// Options matching the client-side arrays for random fallback
-const TIME_OPTIONS = ["dawn", "morning", "noon", "golden hour", "dusk", "night"];
-const WEATHER_OPTIONS = ["clear", "hazy", "fog", "rain", "snow"];
-const CROWD_OPTIONS = ["empty", "few people", "moderate", "busy"];
+const RANDOM_CITIES = [
+  "Tokyo, Japan", "Paris, France", "New York City, USA", "Istanbul, Turkey",
+  "Mumbai, India", "Rome, Italy", "Buenos Aires, Argentina", "Marrakech, Morocco",
+  "Bangkok, Thailand", "Havana, Cuba", "Prague, Czech Republic", "Cairo, Egypt",
+  "Lisbon, Portugal", "Kyoto, Japan", "Mexico City, Mexico", "Amsterdam, Netherlands",
+  "Seoul, South Korea", "Barcelona, Spain", "Nairobi, Kenya", "Reykjavik, Iceland",
+  "Rio de Janeiro, Brazil", "Vienna, Austria", "Hanoi, Vietnam", "Dubrovnik, Croatia",
+  "Petra, Jordan", "Cusco, Peru", "Zanzibar, Tanzania", "Bruges, Belgium",
+  "Cartagena, Colombia", "Jaipur, India", "Bergen, Norway", "Fez, Morocco",
+  "Tallinn, Estonia", "Queenstown, New Zealand", "Valparaíso, Chile",
+  "Edinburgh, Scotland", "Santorini, Greece", "Luang Prabang, Laos",
+  "San Francisco, USA", "Cape Town, South Africa", "Saigon, Vietnam",
+  "Hong Kong, China", "Singapore", "Venice, Italy", "Zürich, Switzerland",
+];
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function isSet(val: string | undefined): val is string {
+  return !!val && val !== "Default";
+}
+
 function buildPrompt(params: Record<string, string>): string {
   const base =
-    "Create an equirectangular image with a perfect seam connection (for viewing in 360). Make it as realistic and natural as possible - like a real Street View Photo.";
+    "Create an equirectangular image with a perfect seam connection (for viewing in 360). Make it as realistic and natural as possible - like a real Street View Photo. No motion blur - all people, vehicles, and moving objects should be frozen in place.";
 
-    
   const detailParts: string[] = [];
-  if (params.location) detailParts.push(`Location: ${params.location}`);
-  if (params.timeOfDay) detailParts.push(`Time of day: ${params.timeOfDay}`);
-  if (params.decade && params.decade !== "Today")
+  if (isSet(params.location)) detailParts.push(`Location: ${params.location}`);
+  if (isSet(params.timeOfDay)) detailParts.push(`Time of day: ${params.timeOfDay}`);
+  if (isSet(params.decade) && params.decade !== "Today")
     detailParts.push(
       `The scene is set in the ${params.decade} era — reflect this ONLY through period-accurate details like vehicles, fashion, signage, storefronts, and street furniture. KEEP IT REALISTIC - like the photo was taken with today's photography equipment. The architecture, roads, and environment should still look like a modern perfect replica photograph taken in that time period, NOT a stylized or vintage-filtered illustration`
     );
-  if (params.placeType && params.placeType !== "Default") detailParts.push(`Setting: a ${params.placeType}`);
-  if (params.weather) detailParts.push(`Weather: ${params.weather}`);
-  if (params.crowd) detailParts.push(`Crowd level: ${params.crowd}`);
+  if (isSet(params.placeType)) detailParts.push(`Setting: a ${params.placeType}`);
+  if (isSet(params.weather)) detailParts.push(`Weather: ${params.weather}`);
+  if (isSet(params.crowd)) detailParts.push(`Crowd level: ${params.crowd}`);
 
   let prompt = detailParts.length === 0 ? base : `${base}\n\n${detailParts.join(". ")}.`;
   if (params.instructions) prompt += `\n\nAdditional instructions: ${params.instructions}`;
@@ -57,12 +70,12 @@ export async function POST(req: Request) {
   }
 
   const resolved: Record<string, string> = {};
-  if (body.location) resolved.location = body.location;
-  resolved.timeOfDay = body.timeOfDay || pick(TIME_OPTIONS);
-  resolved.decade = body.decade || "Today";
+  resolved.location = body.location || pick(RANDOM_CITIES);
+  resolved.timeOfDay = body.timeOfDay || "Default";
+  resolved.decade = body.decade || "Default";
   resolved.placeType = body.placeType || "Default";
-  resolved.weather = body.weather || pick(WEATHER_OPTIONS);
-  resolved.crowd = body.crowd || pick(CROWD_OPTIONS);
+  resolved.weather = body.weather || "Default";
+  resolved.crowd = body.crowd || "Default";
   if (body.instructions) resolved.instructions = body.instructions;
 
   const prompt = buildPrompt(resolved);
@@ -118,11 +131,11 @@ export async function POST(req: Request) {
 
     // Build a descriptive filename from resolved params
     const slugParts: string[] = [];
-    if (resolved.location) slugParts.push(slugify(resolved.location));
-    if (resolved.timeOfDay) slugParts.push(slugify(resolved.timeOfDay));
-    if (resolved.decade) slugParts.push(slugify(resolved.decade));
-    if (resolved.placeType) slugParts.push(slugify(resolved.placeType));
-    if (resolved.weather) slugParts.push(slugify(resolved.weather));
+    if (isSet(resolved.location)) slugParts.push(slugify(resolved.location));
+    if (isSet(resolved.timeOfDay)) slugParts.push(slugify(resolved.timeOfDay));
+    if (isSet(resolved.decade)) slugParts.push(slugify(resolved.decade));
+    if (isSet(resolved.placeType)) slugParts.push(slugify(resolved.placeType));
+    if (isSet(resolved.weather)) slugParts.push(slugify(resolved.weather));
     const slug = slugParts.length > 0 ? slugParts.join("-") : "scene";
 
     const ext = imagePart.inlineData.mimeType === "image/png" ? "png" : "jpg";
