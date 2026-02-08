@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CamCatch",
+  title: "CamCraft",
   description: "Golden Age of Photography",
 };
 

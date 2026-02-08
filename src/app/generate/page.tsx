@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import CityAutocomplete from "./CityAutocomplete";
 import HandOverlay from "@/app/pano/HandOverlay";
 
 const PanoViewer = dynamic(() => import("@/app/pano/PanoViewer"), {
@@ -13,9 +14,18 @@ const PanoViewer = dynamic(() => import("@/app/pano/PanoViewer"), {
   ),
 });
 
+const RotatingEarth = dynamic(() => import("@/components/RotatingEarth"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full text-white/30 text-sm">
+      Loading globe...
+    </div>
+  ),
+});
+
 // ── Option arrays ──────────────────────────────────────────────
 const TIME_OPTIONS = ["Dawn", "Morning", "Noon", "Golden Hour", "Dusk", "Night"];
-const DECADE_OPTIONS = ["1900s", "1920s", "1950s", "1970s", "1990s", "2000s", "2020s", "Tomorrow"];
+const DECADE_OPTIONS = ["1900s", "1920s", "1950s", "1970s", "1990s", "2000s", "Today", "Future"];
 const PLACE_TYPES = [
   "Street", "Station", "Harbor", "Factory", "Fairground",
   "Diner", "Cinema", "Park", "Rooftop", "Market", "Cathedral", "Library",
@@ -29,14 +39,17 @@ function SliderControl({
   options,
   value,
   onChange,
+  defaultIndex,
 }: {
   label: string;
   options: string[];
   value: number | null;
   onChange: (v: number | null) => void;
+  defaultIndex?: number;
 }) {
   const isRandom = value === null;
-  const displayIdx = value ?? Math.floor(options.length / 2);
+  const fallback = defaultIndex ?? Math.floor(options.length / 2);
+  const displayIdx = value ?? fallback;
 
   return (
     <div className="space-y-2">
@@ -44,14 +57,14 @@ function SliderControl({
         <span className="text-sm font-medium text-white/80">{label}</span>
         <button
           type="button"
-          onClick={() => onChange(isRandom ? Math.floor(options.length / 2) : null)}
+          onClick={() => onChange(isRandom ? fallback : null)}
           className={`rounded-full px-3 py-0.5 text-xs font-medium transition-all ${
             isRandom
-              ? "bg-[#FBF4B0]/15 text-[#FBF4B0] border border-[#FBF4B0]/30"
+              ? "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10"
               : "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10"
           }`}
         >
-          {isRandom ? "Random" : "Set"}
+          {isRandom ? "Any" : "Set"}
         </button>
       </div>
 
@@ -111,8 +124,8 @@ function ChipSelector({
           </button>
         )}
         {isRandom && (
-          <span className="rounded-full px-3 py-0.5 text-xs font-medium bg-[#FBF4B0]/15 text-[#FBF4B0] border border-[#FBF4B0]/30">
-            Random
+          <span className="rounded-full px-3 py-0.5 text-xs font-medium bg-white/5 text-white/40 border border-white/10">
+            Any
           </span>
         )}
       </div>
@@ -145,6 +158,7 @@ const SHUTTER_SOUND = "/sony_shutter.mp3";
 export default function GeneratePage() {
   // Parameter state (null = random)
   const [location, setLocation] = useState("");
+  const [locationCoords, setLocationCoords] = useState<[number, number] | null>(null);
   const [timeOfDay, setTimeOfDay] = useState<number | null>(null);
   const [decade, setDecade] = useState<number | null>(null);
   const [placeType, setPlaceType] = useState<string | null>(null);
@@ -314,15 +328,15 @@ export default function GeneratePage() {
         </button>
 
         {/* Scene info panel */}
-        {resolvedParams && (
+        {resolvedParams && Object.keys(resolvedParams).length > 0 && (
           <div className="absolute top-5 right-5 z-30 rounded-xl border border-white/15 bg-black/60 backdrop-blur-md p-4 text-xs text-white/60 space-y-1 max-w-[240px]">
             <div className="text-white/90 font-medium text-sm mb-2">Scene Details</div>
-            <div><span className="text-white/40">Location:</span> {resolvedParams.location}</div>
-            <div><span className="text-white/40">Time:</span> {resolvedParams.timeOfDay}</div>
-            <div><span className="text-white/40">Era:</span> {resolvedParams.decade}</div>
-            <div><span className="text-white/40">Setting:</span> {resolvedParams.placeType}</div>
-            <div><span className="text-white/40">Weather:</span> {resolvedParams.weather}</div>
-            <div><span className="text-white/40">Crowd:</span> {resolvedParams.crowd}</div>
+            {resolvedParams.location && <div><span className="text-white/40">Location:</span> {resolvedParams.location}</div>}
+            {resolvedParams.timeOfDay && <div><span className="text-white/40">Time:</span> {resolvedParams.timeOfDay}</div>}
+            {resolvedParams.decade && <div><span className="text-white/40">Era:</span> {resolvedParams.decade}</div>}
+            {resolvedParams.placeType && <div><span className="text-white/40">Setting:</span> {resolvedParams.placeType}</div>}
+            {resolvedParams.weather && <div><span className="text-white/40">Weather:</span> {resolvedParams.weather}</div>}
+            {resolvedParams.crowd && <div><span className="text-white/40">Crowd:</span> {resolvedParams.crowd}</div>}
           </div>
         )}
 
@@ -340,69 +354,71 @@ export default function GeneratePage() {
   // ── Configure mode ───────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            Generate Panorama
-          </h1>
-          <p className="mt-2 text-sm text-white/40">
-            Configure your scene or leave fields on Random for a surprise
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12">
+        {/* Left column — form */}
+        <div className="w-full lg:w-1/2 max-w-2xl">
+          {/* Header */}
+          <div className="mb-8 text-center lg:text-left">
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              Generate Panorama
+            </h1>
+            <p className="mt-2 text-sm text-white/40">
+              Configure your scene or leave fields on Any to let the AI decide
+            </p>
+          </div>
+
+          {/* Card */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-6 sm:p-8 space-y-6">
+            {/* Location input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/80">Location</label>
+              <CityAutocomplete value={location} onChange={setLocation} onCoordinatesChange={setLocationCoords} />
+            </div>
+
+            {/* Sliders */}
+            <SliderControl label="Time of Day" options={TIME_OPTIONS} value={timeOfDay} onChange={setTimeOfDay} />
+            <SliderControl label="Era" options={DECADE_OPTIONS} value={decade} onChange={setDecade} defaultIndex={6} />
+            <ChipSelector label="Setting" options={PLACE_TYPES} value={placeType} onChange={setPlaceType} />
+            <SliderControl label="Weather" options={WEATHER_OPTIONS} value={weather} onChange={setWeather} />
+            <SliderControl label="Crowd" options={CROWD_OPTIONS} value={crowd} onChange={setCrowd} />
+
+            {/* Generate button */}
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="w-full py-4 rounded-full text-base font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-[#B0FBCD]/10 hover:bg-[#B0FBCD]/20 border border-[#B0FBCD]/30 text-[#B0FBCD]"
+            >
+              {isGenerating ? (
+                <span className="flex items-center justify-center gap-3">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+                  </svg>
+                  Generating... This may take 15-30 seconds
+                </span>
+              ) : (
+                "Generate Panorama"
+              )}
+            </button>
+
+            {/* Error message */}
+            {error && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Footer hint */}
+          <p className="mt-4 text-center lg:text-left text-xs text-white/20">
+            Powered by Gemini &middot; Images are generated as equirectangular panoramas for 360&deg; viewing
           </p>
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-6 sm:p-8 space-y-6">
-          {/* Location input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-white/80">Location</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Tokyo, Paris, New York... (blank = random)"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#B0FBCD]/40 focus:bg-white/[0.07] transition-all"
-            />
-          </div>
-
-          {/* Sliders */}
-          <SliderControl label="Time of Day" options={TIME_OPTIONS} value={timeOfDay} onChange={setTimeOfDay} />
-          <SliderControl label="Era" options={DECADE_OPTIONS} value={decade} onChange={setDecade} />
-          <ChipSelector label="Setting" options={PLACE_TYPES} value={placeType} onChange={setPlaceType} />
-          <SliderControl label="Weather" options={WEATHER_OPTIONS} value={weather} onChange={setWeather} />
-          <SliderControl label="Crowd" options={CROWD_OPTIONS} value={crowd} onChange={setCrowd} />
-
-          {/* Generate button */}
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full py-4 rounded-full text-base font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-[#B0FBCD]/10 hover:bg-[#B0FBCD]/20 border border-[#B0FBCD]/30 text-[#B0FBCD]"
-          >
-            {isGenerating ? (
-              <span className="flex items-center justify-center gap-3">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-                  <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
-                </svg>
-                Generating... This may take 15-30 seconds
-              </span>
-            ) : (
-              "Generate Panorama"
-            )}
-          </button>
-
-          {/* Error message */}
-          {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {error}
-            </div>
-          )}
+        {/* Right column — globe */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center">
+          <RotatingEarth width={750} height={750} targetLocation={locationCoords} />
         </div>
-
-        {/* Footer hint */}
-        <p className="mt-4 text-center text-xs text-white/20">
-          Powered by Gemini &middot; Images are generated as equirectangular panoramas for 360&deg; viewing
-        </p>
       </div>
 
       {/* Custom slider styling */}
