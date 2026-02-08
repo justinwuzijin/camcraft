@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import CityAutocomplete from "./CityAutocomplete";
@@ -119,7 +119,42 @@ function ChipSelector({
   value: string | null;
   onChange: (v: string | null) => void;
 }) {
+  const [customMode, setCustomMode] = useState(false);
+  const [customText, setCustomText] = useState("");
+  const customInputRef = useRef<HTMLInputElement>(null);
+
   const isRandom = value === null;
+  const isPreset = value !== null && options.some((o) => o.toLowerCase() === value);
+  const isCustomValue = value !== null && !isPreset;
+
+  // Focus input when entering custom mode
+  useEffect(() => {
+    if (customMode) customInputRef.current?.focus();
+  }, [customMode]);
+
+  const handleClear = () => {
+    onChange(null);
+    setCustomMode(false);
+    setCustomText("");
+  };
+
+  const handleOtherClick = () => {
+    if (customMode || isCustomValue) {
+      // Toggle off
+      handleClear();
+    } else {
+      setCustomMode(true);
+      setCustomText("");
+      onChange(null);
+    }
+  };
+
+  const handleCustomSubmit = () => {
+    const trimmed = customText.trim();
+    if (trimmed) {
+      onChange(trimmed.toLowerCase());
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -133,14 +168,14 @@ function ChipSelector({
         {!isRandom && (
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={handleClear}
             className="text-[10px] tracking-wider uppercase text-white/20 hover:text-white/40 transition-colors"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Clear
           </button>
         )}
-        {isRandom && (
+        {isRandom && !customMode && (
           <span
             className="text-[10px] tracking-wider uppercase text-white/15"
             style={{ fontFamily: "var(--font-geist-mono)" }}
@@ -156,7 +191,11 @@ function ChipSelector({
             <button
               key={opt}
               type="button"
-              onClick={() => onChange(selected ? null : opt.toLowerCase())}
+              onClick={() => {
+                setCustomMode(false);
+                setCustomText("");
+                onChange(selected ? null : opt.toLowerCase());
+              }}
               className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
                 selected
                   ? "bg-[#B0FBCD]/10 border-[#B0FBCD]/25 text-[#B0FBCD]/90"
@@ -167,6 +206,201 @@ function ChipSelector({
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={handleOtherClick}
+          className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
+            customMode || isCustomValue
+              ? "bg-[#B0FBCD]/10 border-[#B0FBCD]/25 text-[#B0FBCD]/90"
+              : "bg-white/[0.02] border-white/[0.06] text-white/30 hover:bg-white/[0.05] hover:text-white/50 hover:border-white/[0.12]"
+          }`}
+        >
+          {isCustomValue ? value.charAt(0).toUpperCase() + value.slice(1) : "Other\u2026"}
+        </button>
+      </div>
+
+      {/* Custom input */}
+      {customMode && !isCustomValue && (
+        <div
+          className="flex items-center gap-2"
+          style={{ animation: "fadeSlideIn 0.25s ease-out both" }}
+        >
+          <input
+            ref={customInputRef}
+            type="text"
+            value={customText}
+            onChange={(e) => setCustomText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleCustomSubmit();
+              if (e.key === "Escape") handleClear();
+            }}
+            placeholder="Type a custom setting..."
+            className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/70 placeholder-white/15 outline-none transition-all duration-200 focus:border-[#B0FBCD]/20 focus:bg-white/[0.04]"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          />
+          <button
+            type="button"
+            onClick={handleCustomSubmit}
+            disabled={!customText.trim()}
+            className="shrink-0 rounded-lg border border-[#B0FBCD]/20 bg-[#B0FBCD]/[0.06] px-3 py-2 text-[11px] tracking-wider uppercase text-[#B0FBCD]/70 transition-all hover:bg-[#B0FBCD]/[0.12] hover:text-[#B0FBCD]/90 disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          >
+            Set
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Scene Details Panel (viewer overlay) ─────────────────────
+const SCENE_PARAM_META: Record<string, { label: string; icon: React.ReactNode }> = {
+  location: {
+    label: "Location",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 7.25 6 11 6 11C6 11 9.5 7.25 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="6" cy="4.5" r="1.25" stroke="currentColor" strokeWidth="1" />
+      </svg>
+    ),
+  },
+  timeOfDay: {
+    label: "Time",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1" />
+        <path d="M6 3V6L7.5 7.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  decade: {
+    label: "Era",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <rect x="1.5" y="2" width="9" height="8" rx="1" stroke="currentColor" strokeWidth="1" />
+        <path d="M4 1.5V3M8 1.5V3M1.5 5H10.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  placeType: {
+    label: "Setting",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M1.5 10.5H10.5M2.5 10.5V4.5L6 2L9.5 4.5V10.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="4.5" y="6.5" width="3" height="4" stroke="currentColor" strokeWidth="1" />
+      </svg>
+    ),
+  },
+  weather: {
+    label: "Weather",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M3.5 8.5C2.12 8.5 1 7.38 1 6C1 4.62 2.12 3.5 3.5 3.5C3.5 2.12 4.62 1 6 1C7.38 1 8.5 2.12 8.5 3.5C9.88 3.5 11 4.62 11 6C11 7.38 9.88 8.5 8.5 8.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+        <path d="M4 9.5L3.5 11M6 9.5L5.5 11M8 9.5L7.5 11" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  crowd: {
+    label: "Crowd",
+    icon: (
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="4" cy="3.5" r="1.5" stroke="currentColor" strokeWidth="1" />
+        <circle cx="8" cy="3.5" r="1.5" stroke="currentColor" strokeWidth="1" />
+        <path d="M1 9.5C1 7.84 2.34 6.5 4 6.5C4.7 6.5 5.34 6.74 5.84 7.14" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+        <path d="M6.16 7.14C6.66 6.74 7.3 6.5 8 6.5C9.66 6.5 11 7.84 11 9.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+};
+
+function SceneDetailsPanel({ resolvedParams }: { resolvedParams: Record<string, string> }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const entries = Object.entries(resolvedParams).filter(
+    ([, v]) => v && v.trim() !== ""
+  );
+  if (entries.length === 0) return null;
+
+  return (
+    <div
+      className="absolute top-5 right-5 z-30 transition-all duration-500 ease-out"
+      style={{ animation: "fadeSlideIn 0.4s ease-out both" }}
+    >
+      <div
+        className={`relative overflow-hidden rounded-xl border border-white/[0.06] bg-[#0a0a0c]/90 backdrop-blur-xl transition-all duration-400 ${
+          collapsed ? "w-[48px]" : "w-[260px]"
+        }`}
+      >
+        {/* Accent top edge */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B0FBCD]/20 to-transparent" />
+
+        {/* Header row */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="relative flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-white/[0.02]"
+        >
+          {/* Aperture icon */}
+          <div className={`shrink-0 text-[#B0FBCD]/50 transition-transform duration-300 ${collapsed ? "rotate-90" : "rotate-0"}`}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="0.8" />
+              <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="0.8" />
+              <path d="M7 1.5V4M7 10V12.5M1.5 7H4M10 7H12.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
+            </svg>
+          </div>
+          {!collapsed && (
+            <span
+              className="text-[10px] tracking-[0.25em] uppercase text-white/25 flex-1"
+              style={{ fontFamily: "var(--font-geist-mono)" }}
+            >
+              Scene
+            </span>
+          )}
+          {!collapsed && (
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              className="text-white/20 shrink-0"
+            >
+              <path d="M7.5 4L5 6.5L2.5 4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+
+        {/* Content */}
+        {!collapsed && (
+          <div className="px-4 pb-4">
+            <div className="h-px bg-white/[0.06] mb-3" />
+            <div className="space-y-2.5">
+              {entries.map(([key, value]) => {
+                const meta = SCENE_PARAM_META[key];
+                if (!meta) return null;
+                return (
+                  <div key={key} className="flex items-center gap-3">
+                    <div className="shrink-0 text-white/20">
+                      {meta.icon}
+                    </div>
+                    <div className="flex flex-1 items-baseline justify-between gap-3 min-w-0">
+                      <span className="text-[10px] text-white/30 shrink-0 uppercase tracking-wider" style={{ fontFamily: "var(--font-geist-mono)" }}>
+                        {meta.label}
+                      </span>
+                      <span className="text-xs text-white/70 text-right truncate">
+                        {value.charAt(0).toUpperCase() + value.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom accent */}
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-px flex-1 bg-gradient-to-r from-[#B0FBCD]/10 to-transparent" />
+              <div className="h-1 w-1 rounded-full bg-[#B0FBCD]/20" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -191,6 +425,7 @@ export default function GeneratePage() {
   const [placeType, setPlaceType] = useState<string | null>(null);
   const [weather, setWeather] = useState<number | null>(null);
   const [crowd, setCrowd] = useState<number | null>(null);
+  const [instructions, setInstructions] = useState("");
 
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -414,6 +649,7 @@ export default function GeneratePage() {
       placeType: placeType || undefined,
       weather: weather !== null ? WEATHER_OPTIONS[weather].toLowerCase() : undefined,
       crowd: crowd !== null ? CROWD_OPTIONS[crowd].toLowerCase() : undefined,
+      instructions: instructions.trim() || undefined,
     };
 
     try {
@@ -453,7 +689,7 @@ export default function GeneratePage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [location, timeOfDay, decade, placeType, weather, crowd, panoUrl]);
+  }, [location, timeOfDay, decade, placeType, weather, crowd, instructions, panoUrl]);
 
   // ── Viewer mode ──────────────────────────────────────────
   if (showViewer && panoUrl) {
@@ -576,15 +812,7 @@ export default function GeneratePage() {
 
         {/* Scene info panel */}
         {resolvedParams && Object.keys(resolvedParams).length > 0 && (
-          <div className="absolute top-5 right-5 z-30 rounded-xl border border-white/15 bg-black/60 backdrop-blur-md p-4 text-xs text-white/60 space-y-1 max-w-[240px]">
-            <div className="text-white/90 font-medium text-sm mb-2">Scene Details</div>
-            {resolvedParams.location && <div><span className="text-white/40">Location:</span> {resolvedParams.location}</div>}
-            {resolvedParams.timeOfDay && <div><span className="text-white/40">Time:</span> {resolvedParams.timeOfDay}</div>}
-            {resolvedParams.decade && <div><span className="text-white/40">Era:</span> {resolvedParams.decade}</div>}
-            {resolvedParams.placeType && <div><span className="text-white/40">Setting:</span> {resolvedParams.placeType}</div>}
-            {resolvedParams.weather && <div><span className="text-white/40">Weather:</span> {resolvedParams.weather}</div>}
-            {resolvedParams.crowd && <div><span className="text-white/40">Crowd:</span> {resolvedParams.crowd}</div>}
-          </div>
+          <SceneDetailsPanel resolvedParams={resolvedParams} />
         )}
       </div>
     );
@@ -698,6 +926,41 @@ export default function GeneratePage() {
               <SliderControl label="Crowd" options={CROWD_OPTIONS} value={crowd} onChange={setCrowd} />
             </div>
 
+            {/* Section: Additional Instructions */}
+            <div
+              className="mb-8"
+              style={{ animation: "fadeSlideIn 0.5s ease-out 0.12s both" }}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-[10px] tracking-[0.2em] uppercase text-white/25"
+                    style={{ fontFamily: "var(--font-geist-mono)" }}
+                  >
+                    Additional Instructions
+                  </span>
+                  {instructions.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => setInstructions("")}
+                      className="text-[10px] tracking-wider uppercase text-white/20 hover:text-white/40 transition-colors"
+                      style={{ fontFamily: "var(--font-geist-mono)" }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="e.g. Include a red telephone booth, make it a drone shot"
+                  rows={3}
+                  className="w-full resize-none rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white/70 placeholder-white/15 outline-none transition-all duration-200 focus:border-white/[0.12] focus:bg-white/[0.03]"
+                  style={{ fontFamily: "var(--font-geist-mono)" }}
+                />
+              </div>
+            </div>
+
             <div className="h-px bg-white/[0.06] mb-8" />
 
             {/* Generate button */}
@@ -749,11 +1012,11 @@ export default function GeneratePage() {
             <RotatingEarth width={700} height={700} targetLocation={locationCoords} />
 
             {/* Targeting readout */}
-            <div className="w-full max-w-[340px] mt-4">
+            <div className="w-full max-w-[500px] mt-6">
               {/* Crosshair divider */}
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/[0.06]" />
-                <div className={`relative h-2.5 w-2.5 rounded-full transition-all duration-700 ${
+                <div className={`relative h-3.5 w-3.5 rounded-full transition-all duration-700 ${
                   locationCoords ? "bg-[#B0FBCD]/60" : "bg-white/[0.08]"
                 }`}>
                   {locationCoords && (
@@ -769,7 +1032,7 @@ export default function GeneratePage() {
                 {/* Status label */}
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-[9px] tracking-[0.3em] uppercase transition-colors duration-500 ${
+                    className={`text-[11px] tracking-[0.3em] uppercase transition-colors duration-500 ${
                       locationCoords ? "text-[#B0FBCD]/50" : "text-white/15"
                     }`}
                     style={{ fontFamily: "var(--font-geist-mono)" }}
@@ -780,7 +1043,7 @@ export default function GeneratePage() {
 
                 {/* Coordinates */}
                 <div
-                  className="text-[10px] tracking-wider text-white/20 transition-colors duration-500"
+                  className="text-[12px] tracking-wider text-white/20 transition-colors duration-500"
                   style={{ fontFamily: "var(--font-geist-mono)" }}
                 >
                   {locationCoords
@@ -797,7 +1060,7 @@ export default function GeneratePage() {
                   style={{ animation: "fadeSlideIn 0.4s ease-out both" }}
                 >
                   <span
-                    className="text-xs tracking-[0.15em] uppercase text-white/50"
+                    className="text-base tracking-[0.15em] uppercase text-white/50"
                     style={{ fontFamily: "var(--font-geist-mono)" }}
                   >
                     {location}

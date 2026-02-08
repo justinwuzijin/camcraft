@@ -10,6 +10,15 @@ function slugify(str: string): string {
     .slice(0, 30);
 }
 
+// Options matching the client-side arrays for random fallback
+const TIME_OPTIONS = ["dawn", "morning", "noon", "golden hour", "dusk", "night"];
+const WEATHER_OPTIONS = ["clear", "hazy", "fog", "rain", "snow"];
+const CROWD_OPTIONS = ["empty", "few people", "moderate", "busy"];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function buildPrompt(params: Record<string, string>): string {
   const base =
     "Create an equirectangular image with a perfect seam connection (for viewing in 360). Make it as realistic and natural as possible - like a real Street View Photo.";
@@ -18,16 +27,17 @@ function buildPrompt(params: Record<string, string>): string {
   const detailParts: string[] = [];
   if (params.location) detailParts.push(`Location: ${params.location}`);
   if (params.timeOfDay) detailParts.push(`Time of day: ${params.timeOfDay}`);
-  if (params.decade)
+  if (params.decade && params.decade !== "Today")
     detailParts.push(
       `The scene is set in the ${params.decade} era — reflect this ONLY through period-accurate details like vehicles, fashion, signage, storefronts, and street furniture. KEEP IT REALISTIC - like the photo was taken with today's photography equipment. The architecture, roads, and environment should still look like a modern perfect replica photograph taken in that time period, NOT a stylized or vintage-filtered illustration`
     );
-  if (params.placeType) detailParts.push(`Setting: a ${params.placeType}`);
+  if (params.placeType && params.placeType !== "Default") detailParts.push(`Setting: a ${params.placeType}`);
   if (params.weather) detailParts.push(`Weather: ${params.weather}`);
   if (params.crowd) detailParts.push(`Crowd level: ${params.crowd}`);
 
-  if (detailParts.length === 0) return base;
-  return `${base}\n\n${detailParts.join(". ")}.`;
+  let prompt = detailParts.length === 0 ? base : `${base}\n\n${detailParts.join(". ")}.`;
+  if (params.instructions) prompt += `\n\nAdditional instructions: ${params.instructions}`;
+  return prompt;
 }
 
 export async function POST(req: Request) {
@@ -48,11 +58,12 @@ export async function POST(req: Request) {
 
   const resolved: Record<string, string> = {};
   if (body.location) resolved.location = body.location;
-  if (body.timeOfDay) resolved.timeOfDay = body.timeOfDay;
-  if (body.decade) resolved.decade = body.decade;
-  if (body.placeType) resolved.placeType = body.placeType;
-  if (body.weather) resolved.weather = body.weather;
-  if (body.crowd) resolved.crowd = body.crowd;
+  resolved.timeOfDay = body.timeOfDay || pick(TIME_OPTIONS);
+  resolved.decade = body.decade || "Today";
+  resolved.placeType = body.placeType || "Default";
+  resolved.weather = body.weather || pick(WEATHER_OPTIONS);
+  resolved.crowd = body.crowd || pick(CROWD_OPTIONS);
+  if (body.instructions) resolved.instructions = body.instructions;
 
   const prompt = buildPrompt(resolved);
 
