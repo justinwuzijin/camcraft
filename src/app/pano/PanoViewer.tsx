@@ -4,21 +4,24 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-const PANO_PATH = "/pano_test2.png";
+const PANO_PATH = "/generated/pano_1770515013453.jpg";
 
 export type GestureDeltaRef = React.MutableRefObject<{
   deltaAzimuth: number;
   deltaPolar: number;
 } | null>;
 
+export type CaptureRef = React.MutableRefObject<(() => string | null) | null>;
+
 type PanoViewerProps = {
   gestureDeltaRef?: GestureDeltaRef;
   panoUrl?: string;
+  captureRef?: CaptureRef;
 };
 
 const GESTURE_ROTATE_SCALE = 2;
 
-export default function PanoViewer({ gestureDeltaRef, panoUrl }: PanoViewerProps) {
+export default function PanoViewer({ gestureDeltaRef, panoUrl, captureRef }: PanoViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gestureRefRef = useRef(gestureDeltaRef);
   gestureRefRef.current = gestureDeltaRef;
@@ -57,6 +60,13 @@ export default function PanoViewer({ gestureDeltaRef, panoUrl }: PanoViewerProps
 
     const sphere = new THREE.Mesh(geometry, material);
     scene.add(sphere);
+
+    if (captureRef) {
+      captureRef.current = () => {
+        renderer.render(scene, camera);
+        return renderer.domElement.toDataURL("image/jpeg");
+      };
+    }
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -111,6 +121,7 @@ export default function PanoViewer({ gestureDeltaRef, panoUrl }: PanoViewerProps
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
+      if (captureRef) captureRef.current = null;
       renderer.dispose();
       texture.dispose();
       geometry.dispose();

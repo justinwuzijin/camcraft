@@ -38,6 +38,7 @@ type HandOverlayProps = {
   gestureDeltaRef?: GestureDeltaRef;
   onPictureFrame?: () => void;
   onFistOpen?: () => void;
+  onFocus?: () => void;
   cameraOverlayActive?: boolean;
 };
 
@@ -45,6 +46,7 @@ export default function HandOverlay({
   gestureDeltaRef,
   onPictureFrame,
   onFistOpen,
+  onFocus,
   cameraOverlayActive,
 }: HandOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -368,7 +370,7 @@ export default function HandOverlay({
             now - focusLastFiredRef.current >= FOCUS_COOLDOWN_MS;
           if (held >= FOCUS_HOLD_MS && cooldownPassed) {
             focusLastFiredRef.current = now;
-            new Audio("/focus.mp3").play().catch(() => {});
+            if (onFocus) onFocus();
           }
         } else {
           focusHoldStartRef.current = null;

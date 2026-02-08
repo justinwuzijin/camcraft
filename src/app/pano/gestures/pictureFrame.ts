@@ -1,7 +1,7 @@
 import { HandLandmarks, dist, HAND_LANDMARKS } from "./types";
 
 export const PICTURE_FRAME_INDEX_EXTEND_MIN = 0.03;
-export const PICTURE_FRAME_INDEX_EXTEND_MAX = 0.18;
+export const PICTURE_FRAME_INDEX_EXTEND_MAX = 0.11;
 export const PICTURE_FRAME_THUMB_EXTEND_MIN = 0.06;
 export const PICTURE_FRAME_OTHER_CURL_MAX = 0.2;
 export const PICTURE_FRAME_THUMB_INDEX_SPREAD_MIN = 0.06;
