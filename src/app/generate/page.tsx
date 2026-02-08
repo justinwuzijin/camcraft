@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import CityAutocomplete from "./CityAutocomplete";
 import HandOverlay from "@/app/pano/HandOverlay";
+import GestureTutorial from "@/components/GestureTutorial";
 
 const PanoViewer = dynamic(() => import("@/app/pano/PanoViewer"), {
   ssr: false,
@@ -177,6 +178,8 @@ export default function GeneratePage() {
   const [error, setError] = useState<string | null>(null);
   const [panoUrl, setPanoUrl] = useState<string | null>(null);
   const [resolvedParams, setResolvedParams] = useState<Record<string, string> | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialDismissed, setTutorialDismissed] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
 
   // Camera overlay state (same as /pano)
@@ -304,9 +307,24 @@ export default function GeneratePage() {
     };
   }, [panoUrl]);
 
+  // Transition to viewer when panorama is ready and tutorial is dismissed
+  useEffect(() => {
+    if (panoUrl && tutorialDismissed && !showViewer) {
+      setShowTutorial(false);
+      setShowViewer(true);
+    }
+  }, [panoUrl, tutorialDismissed, showViewer]);
+
+  // Handle tutorial dismissal
+  const handleTutorialComplete = useCallback(() => {
+    setTutorialDismissed(true);
+  }, []);
+
   const handleGenerate = useCallback(async () => {
     setIsGenerating(true);
     setError(null);
+    setShowTutorial(true);
+    setTutorialDismissed(false);
 
     const params: Record<string, string | undefined> = {
       location: location.trim() || undefined,
@@ -344,7 +362,11 @@ export default function GeneratePage() {
 
       setPanoUrl(url);
       setResolvedParams(data.parameters);
-      setShowViewer(true);
+      // If tutorial was already dismissed, go straight to viewer
+      if (tutorialDismissed) {
+        setShowTutorial(false);
+        setShowViewer(true);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -567,6 +589,12 @@ export default function GeneratePage() {
           box-shadow: none;
         }
       `}</style>
+
+      {/* Gesture Tutorial Popup - shown during generation */}
+      <GestureTutorial 
+        isVisible={showTutorial} 
+        onComplete={handleTutorialComplete} 
+      />
     </div>
   );
 }
