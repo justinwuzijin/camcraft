@@ -115,7 +115,7 @@ export default function CityAutocomplete({
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder="e.g. Tokyo, Paris, New York... (blank = random)"
+        placeholder="e.g. Tokyo, Paris, New York..."
         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#B0FBCD]/40 focus:bg-white/[0.07] transition-all"
         autoComplete="off"
       />
