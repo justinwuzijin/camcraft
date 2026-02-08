@@ -118,12 +118,12 @@ function FilmStrip() {
         {frames.map((src, i) => (
           <div
             key={i}
-            className="relative mr-1 h-14 w-24 shrink-0 overflow-hidden rounded-[2px] border border-white/[0.06] bg-white/[0.02]"
+            className="group/frame relative mr-1 h-28 w-48 shrink-0 overflow-hidden rounded-[2px] border border-white/[0.06] bg-white/[0.02]"
           >
             <img
               src={src}
               alt=""
-              className="h-full w-full object-cover opacity-40"
+              className="h-full w-full object-cover opacity-40 transition-opacity duration-300 group-hover/frame:opacity-80"
               loading="lazy"
               draggable={false}
             />
@@ -381,7 +381,7 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════════════
           HERO SECTION — Logo-centered, clean vertical stack
          ═══════════════════════════════════════════════════════════ */}
-      <section className="relative flex h-screen flex-col items-center justify-center overflow-hidden">
+      <section className="relative flex h-[85vh] flex-col items-center justify-center overflow-hidden">
         {/* Radial vignette */}
         <div
           className="absolute inset-0 z-10"
