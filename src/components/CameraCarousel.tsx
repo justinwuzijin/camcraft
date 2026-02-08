@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, useGLTF } from "@react-three/drei";
+import { Environment, useGLTF, Html } from "@react-three/drei";
 import { Vector3, Object3D, Group } from "three";
 import gsap from "gsap";
 import Link from "next/link";
@@ -41,6 +41,30 @@ const CAMERA_SPECS: Record<string, { body: string; lens: string; focalLength: st
     sensor: "35mm Full-Frame BSI",
     resolution: "33 Megapixels",
   },
+};
+
+// Part labels for exploded view - each camera has labels that track with 3D rotation
+const PART_LABELS: Record<string, { name: string; fact: string; position: [number, number, number] }[]> = {
+  "sony-a7iv": [
+    { name: "Lens Hood", fact: "Reduces lens flare and protects the front element", position: [-1.2, 0.8, 10] },
+    { name: "Lens Barrel", fact: "Houses 18 elements in 14 groups for sharp optics", position: [1.2, -0.5, 5] },
+    { name: "Camera Body", fact: "33MP full-frame sensor with 5-axis stabilization", position: [1.5, 0.5, -1] },
+  ],
+  "sony-handycam": [
+    { name: "Viewfinder", fact: 'Electronic viewfinder with 0.44" LCD', position: [0.8, 0.8, 0] },
+    { name: "Lens Assembly", fact: "Carl Zeiss optics with 10x optical zoom", position: [-1, 0, 1.5] },
+    { name: "Tape Deck", fact: "Records to MiniDV tape at 500 lines resolution", position: [1, -0.5, -1] },
+  ],
+  "digital-camera": [
+    { name: "Flash Unit", fact: "Built-in flash with 3m effective range", position: [-0.8, 0.6, 0] },
+    { name: "Lens", fact: "3x optical zoom with macro mode", position: [0.8, 0, 1.5] },
+    { name: "LCD Screen", fact: "2.5 inch display with 230K dots", position: [1, -0.3, -1] },
+  ],
+  "fujifilm-xt2": [
+    { name: "EVF", fact: "2.36M-dot OLED with 0.77x magnification", position: [-0.8, 0.8, 0] },
+    { name: "Lens Mount", fact: "Fujifilm X-mount with 17.7mm flange distance", position: [0.8, 0, 1.5] },
+    { name: "Grip", fact: "Deep ergonomic grip for stable handling", position: [1.2, -0.3, -0.5] },
+  ],
 };
 
 // Camera data in chronological order (oldest to newest)
@@ -175,12 +199,16 @@ const InteractiveCameraModel = ({
   isExploded,
   isA7 = false,
   initialRotation = [0, 0, 0],
+  cameraId,
 }: {
   modelPath: string;
   isExploded: boolean;
   isA7?: boolean;
   initialRotation?: [number, number, number];
+  cameraId: string;
 }) => {
+  // Get labels for this camera
+  const labels = PART_LABELS[cameraId] || [];
   const gltf = useGLTF(modelPath);
   const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
   const groupRef = useRef<Group>(null);
@@ -343,6 +371,26 @@ const InteractiveCameraModel = ({
       }}
     >
       <primitive object={clonedScene} />
+
+      {/* Part labels - only visible when exploded */}
+      {isExploded && labels.map((label, index) => (
+        <Html
+          key={index}
+          position={label.position}
+          center
+          distanceFactor={10}
+          style={{
+            transition: 'opacity 0.5s ease',
+            opacity: isExploded ? 1 : 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <div className="bg-black/80 backdrop-blur-sm border border-[#B0FBCD]/40 rounded-lg px-3 py-2 min-w-[120px] max-w-[180px] shadow-lg">
+            <p className="text-[#B0FBCD] font-semibold text-xs whitespace-nowrap">{label.name}</p>
+            <p className="text-white/60 text-[10px] mt-1 leading-tight">{label.fact}</p>
+          </div>
+        </Html>
+      ))}
     </group>
   );
 };
@@ -451,7 +499,7 @@ const CarouselScene = ({
           const isA7 = cam.id === "sony-a7iv";
           return (
             <group key={cam.id} position={cam.position} scale={[finalScale, finalScale, finalScale]}>
-              <InteractiveCameraModel modelPath={cam.modelPath} isExploded={isExploded} isA7={isA7} initialRotation={cam.initialRotation} />
+              <InteractiveCameraModel modelPath={cam.modelPath} isExploded={isExploded} isA7={isA7} initialRotation={cam.initialRotation} cameraId={cam.id} />
             </group>
           );
         })}
@@ -464,42 +512,42 @@ CAMERAS.forEach((camera) => {
   useGLTF.preload(camera.modelPath);
 });
 
-// Specs Panel Component
+// Specs Panel Component - larger for exploded view
 const SpecsPanel = ({ cameraId, visible }: { cameraId: string; visible: boolean }) => {
   const specs = CAMERA_SPECS[cameraId];
   if (!specs) return null;
 
   return (
     <div
-      className={`absolute left-8 top-1/2 -translate-y-1/2 w-72 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 transition-all duration-500 ${
+      className={`absolute left-16 top-1/2 -translate-y-1/2 w-[420px] bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-8 transition-all duration-500 ${
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8 pointer-events-none"
       }`}
     >
-      <h3 className="text-lg font-semibold text-white mb-4">Specifications</h3>
-      <div className="space-y-3">
+      <h3 className="text-2xl font-semibold text-white mb-6">Specifications</h3>
+      <div className="space-y-5">
         <div>
-          <p className="text-xs text-white/40 uppercase tracking-wider">Camera Body</p>
-          <p className="text-sm text-white">{specs.body}</p>
+          <p className="text-sm text-white/40 uppercase tracking-wider">Camera Body</p>
+          <p className="text-lg text-white">{specs.body}</p>
         </div>
         <div>
-          <p className="text-xs text-white/40 uppercase tracking-wider">Lens</p>
-          <p className="text-sm text-white">{specs.lens}</p>
+          <p className="text-sm text-white/40 uppercase tracking-wider">Lens</p>
+          <p className="text-lg text-white">{specs.lens}</p>
         </div>
         <div>
-          <p className="text-xs text-white/40 uppercase tracking-wider">Focal Length</p>
-          <p className="text-sm text-white">{specs.focalLength}</p>
+          <p className="text-sm text-white/40 uppercase tracking-wider">Focal Length</p>
+          <p className="text-lg text-white">{specs.focalLength}</p>
         </div>
         <div>
-          <p className="text-xs text-white/40 uppercase tracking-wider">ISO Range</p>
-          <p className="text-sm text-white">{specs.iso}</p>
+          <p className="text-sm text-white/40 uppercase tracking-wider">ISO Range</p>
+          <p className="text-lg text-white">{specs.iso}</p>
         </div>
         <div>
-          <p className="text-xs text-white/40 uppercase tracking-wider">Sensor</p>
-          <p className="text-sm text-white">{specs.sensor}</p>
+          <p className="text-sm text-white/40 uppercase tracking-wider">Sensor</p>
+          <p className="text-lg text-white">{specs.sensor}</p>
         </div>
         <div>
-          <p className="text-xs text-white/40 uppercase tracking-wider">Resolution</p>
-          <p className="text-sm text-white">{specs.resolution}</p>
+          <p className="text-sm text-white/40 uppercase tracking-wider">Resolution</p>
+          <p className="text-lg text-white">{specs.resolution}</p>
         </div>
       </div>
     </div>
