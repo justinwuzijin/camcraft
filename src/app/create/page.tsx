@@ -19,9 +19,18 @@ function ShutterOpenOverlay() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    // Play shutter sound when the overlay mounts
+    const audio = new Audio("/sony_shutter.mp3");
+    audio.volume = 0.7;
+    audio.play().catch(() => {});
+
     // Start the opening animation after a brief delay
     const timer = setTimeout(() => setIsOpen(true), 100);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      audio.pause();
+      audio.currentTime = 0;
+    };
   }, []);
 
   return (
