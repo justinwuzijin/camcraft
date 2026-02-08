@@ -176,7 +176,7 @@ export default function RotatingEarth({ width = 800, height = 600, className = "
         })
       }
 
-      // Red flashing dot at target location
+      // Teal flashing dot at target location
       if (state.targetLngLat) {
         const projected = projection(state.targetLngLat)
         if (projected) {
@@ -187,14 +187,14 @@ export default function RotatingEarth({ width = 800, height = 600, className = "
           const glowRadius = (8 + 4 * pulse) * scaleFactor
           context.beginPath()
           context.arc(projected[0], projected[1], glowRadius, 0, 2 * Math.PI)
-          context.fillStyle = `rgba(255, 40, 40, ${0.1 + 0.12 * pulse})`
+          context.fillStyle = `rgba(176, 251, 205, ${0.1 + 0.12 * pulse})`
           context.fill()
 
           // Inner dot
           const dotRadius = (3.5 + 1.5 * pulse) * scaleFactor
           context.beginPath()
           context.arc(projected[0], projected[1], dotRadius, 0, 2 * Math.PI)
-          context.fillStyle = `rgba(255, 50, 50, ${0.7 + 0.3 * pulse})`
+          context.fillStyle = `rgba(176, 251, 205, ${0.7 + 0.3 * pulse})`
           context.fill()
         }
       }

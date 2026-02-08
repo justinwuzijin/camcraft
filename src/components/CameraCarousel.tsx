@@ -783,11 +783,6 @@ export const CameraCarousel = () => {
           backgroundRepeat: "repeat",
         }}
       />
-      {/* Grid background with low opacity */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-repeat opacity-[0.08]"
-        style={{ backgroundImage: 'url(/grid-background.png)' }}
-      />
       {/* 3D Canvas */}
       <Canvas camera={{ position: [0, 0.5, 2], fov: 55 }}>
         <Suspense fallback={null}>
