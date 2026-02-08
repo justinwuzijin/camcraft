@@ -378,7 +378,7 @@ export default function GalleryPage() {
                 items.length - 1 && (
                 <button
                   onClick={() => navigateLightbox(1)}
-                  className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/10 bg-black/40 p-2 text-white/50 backdrop-blur-md transition-all hover:border-white/20 hover:text-white/80 sm:right-6 lg:right-[calc(380px+1.5rem)]"
+                  className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full border border-white/10 bg-black/40 p-2 text-white/50 backdrop-blur-md transition-all hover:border-white/20 hover:text-white/80 sm:right-6"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path
