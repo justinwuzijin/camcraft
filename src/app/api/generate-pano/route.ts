@@ -1,36 +1,25 @@
 import { NextResponse } from "next/server";
-
-const TIME_OPTIONS = ["dawn", "morning", "noon", "golden hour", "dusk", "night"];
-const DECADE_OPTIONS = ["1900s", "1920s", "1950s", "1970s", "1990s", "2000s", "2020s", "tomorrow"];
-const PLACE_OPTIONS = [
-  "street", "station", "harbor", "factory", "fairground",
-  "diner", "cinema", "park", "rooftop", "market", "cathedral", "library",
-];
-const WEATHER_OPTIONS = ["clear", "hazy", "fog", "rain", "snow"];
-const CROWD_OPTIONS = ["empty", "few people", "moderate", "busy"];
-const LOCATION_OPTIONS = [
-  "Tokyo", "Paris", "New York", "London", "Rome", "Cairo",
-  "Istanbul", "Havana", "Marrakech", "Kyoto", "Vienna", "Buenos Aires",
-];
-
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
 function buildPrompt(params: Record<string, string>): string {
   const base =
-    "Create a photorealistic equirectangular panorama image with perfect seam connection suitable for 360-degree spherical viewing. The left and right edges must connect seamlessly. The image should be in 2:1 equirectangular projection format.";
+    "Create an equirectangular image with a perfect seam connection (for viewing in 360). Make it as realistic and natural as possible - like a real Street View Photo.";
 
-  const details = [
-    `Location: ${params.location}`,
-    `Time of day: ${params.timeOfDay}`,
-    `Era/period: ${params.decade}`,
-    `Setting: a ${params.placeType}`,
-    `Weather: ${params.weather}`,
-    `Crowd level: ${params.crowd}`,
-  ].join(". ");
+    
+  const detailParts: string[] = [];
+  if (params.location) detailParts.push(`Location: ${params.location}`);
+  if (params.timeOfDay) detailParts.push(`Time of day: ${params.timeOfDay}`);
+  if (params.decade)
+    detailParts.push(
+      `The scene is set in the ${params.decade} era — reflect this ONLY through period-accurate details like vehicles, fashion, signage, storefronts, and street furniture. KEEP IT REALISTIC - like the photo was taken with today's photography equipment. The architecture, roads, and environment should still look like a modern perfect replica photograph taken in that time period, NOT a stylized or vintage-filtered illustration`
+    );
+  if (params.placeType) detailParts.push(`Setting: a ${params.placeType}`);
+  if (params.weather) detailParts.push(`Weather: ${params.weather}`);
+  if (params.crowd) detailParts.push(`Crowd level: ${params.crowd}`);
 
-  return `${base}\n\n${details}.`;
+  if (detailParts.length === 0) return base;
+  return `${base}\n\n${detailParts.join(". ")}.`;
 }
 
 export async function POST(req: Request) {
@@ -49,14 +38,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const resolved: Record<string, string> = {
-    location: body.location || pick(LOCATION_OPTIONS),
-    timeOfDay: body.timeOfDay || pick(TIME_OPTIONS),
-    decade: body.decade || pick(DECADE_OPTIONS),
-    placeType: body.placeType || pick(PLACE_OPTIONS),
-    weather: body.weather || pick(WEATHER_OPTIONS),
-    crowd: body.crowd || pick(CROWD_OPTIONS),
-  };
+  const resolved: Record<string, string> = {};
+  if (body.location) resolved.location = body.location;
+  if (body.timeOfDay) resolved.timeOfDay = body.timeOfDay;
+  if (body.decade) resolved.decade = body.decade;
+  if (body.placeType) resolved.placeType = body.placeType;
+  if (body.weather) resolved.weather = body.weather;
+  if (body.crowd) resolved.crowd = body.crowd;
 
   const prompt = buildPrompt(resolved);
 
@@ -73,6 +61,9 @@ export async function POST(req: Request) {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             responseModalities: ["TEXT", "IMAGE"],
+            imageConfig: {
+              imageSize: "4K",
+            },
           },
         }),
       }
@@ -106,11 +97,23 @@ export async function POST(req: Request) {
       );
     }
 
+    // Save image to public/generated/
+    const ext = imagePart.inlineData.mimeType === "image/png" ? "png" : "jpg";
+    const filename = `pano_${Date.now()}.${ext}`;
+    const dir = path.join(process.cwd(), "public", "generated");
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      path.join(dir, filename),
+      Buffer.from(imagePart.inlineData.data, "base64")
+    );
+    console.log(`Saved generated image: public/generated/${filename}`);
+
     return NextResponse.json({
       image: imagePart.inlineData.data,
       mimeType: imagePart.inlineData.mimeType,
       prompt,
       parameters: resolved,
+      savedPath: `/generated/${filename}`,
     });
   } catch (e) {
     console.error("Gemini request failed:", e);
