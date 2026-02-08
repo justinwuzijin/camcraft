@@ -2,6 +2,8 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import NextImage from "next/image";
 import { NavButton } from "@/components/NavButton";
 import PhotoFlyAnimation from "@/components/PhotoFlyAnimation";
 import CityAutocomplete from "./CityAutocomplete";
@@ -821,7 +823,7 @@ export default function GeneratePage() {
         />
 
         {/* Navigation buttons */}
-        <div className="absolute top-5 left-5 z-30 flex items-center gap-2">
+        <div className="absolute top-5 left-5 z-30 flex items-center gap-2 ml-12 sm:ml-14">
           <NavButton
             href=""
             icon="back"
@@ -883,7 +885,19 @@ export default function GeneratePage() {
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
           <div className="flex items-center gap-4">
-            <NavButton href="/" icon="back" label="Back" variant="header" />
+            <Link href="/" aria-label="Home" className="relative shrink-0">
+              <div
+                className="absolute inset-0 blur-lg opacity-25 rounded-full"
+                style={{ background: "rgba(176,251,205,0.4)", transform: "scale(1.6)" }}
+              />
+              <NextImage
+                src="/logo.png"
+                alt="CamCraft"
+                width={28}
+                height={28}
+                className="relative h-7 w-7 object-contain drop-shadow-[0_0_10px_rgba(176,251,205,0.15)]"
+              />
+            </Link>
             <div className="h-4 w-px bg-white/[0.08]" />
             <h1
               className="text-sm tracking-[0.25em] uppercase text-white/70"

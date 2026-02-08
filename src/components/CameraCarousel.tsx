@@ -801,7 +801,7 @@ export const CameraCarousel = () => {
       {isExploded && (
         <button
           onClick={() => setIsExploded(false)}
-          className="absolute top-6 left-6 z-30 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/[0.06] px-4 py-2 text-sm text-white/60 hover:text-white/80 hover:bg-black/80 transition-all"
+          className="absolute top-6 left-6 z-30 ml-12 sm:ml-14 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/[0.06] px-4 py-2 text-sm text-white/60 hover:text-white/80 hover:bg-black/80 transition-all"
         >
           <svg
             width="16"

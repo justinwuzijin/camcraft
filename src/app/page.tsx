@@ -23,43 +23,23 @@ function useReveal(threshold = 0.15) {
 
 // ── Viewfinder corner marks ─────────────────────────────────
 function ViewfinderCorners({ className = "" }: { className?: string }) {
-  const stroke = "rgba(176,251,205,0.2)";
+  const stroke = "rgba(176,251,205,0.12)";
   const len = 24;
   return (
     <div className={`pointer-events-none absolute inset-0 ${className}`}>
-      {/* Top-left */}
       <svg className="absolute top-0 left-0" width={len} height={len}>
         <path d={`M0 ${len} L0 0 L${len} 0`} stroke={stroke} strokeWidth="1.5" fill="none" />
       </svg>
-      {/* Top-right */}
       <svg className="absolute top-0 right-0" width={len} height={len}>
         <path d={`M0 0 L${len} 0 L${len} ${len}`} stroke={stroke} strokeWidth="1.5" fill="none" />
       </svg>
-      {/* Bottom-left */}
       <svg className="absolute bottom-0 left-0" width={len} height={len}>
         <path d={`M0 0 L0 ${len} L${len} ${len}`} stroke={stroke} strokeWidth="1.5" fill="none" />
       </svg>
-      {/* Bottom-right */}
       <svg className="absolute bottom-0 right-0" width={len} height={len}>
         <path d={`M${len} 0 L${len} ${len} L0 ${len}`} stroke={stroke} strokeWidth="1.5" fill="none" />
       </svg>
     </div>
-  );
-}
-
-// ── Aperture icon SVG ────────────────────────────────────────
-function ApertureIcon({ size = 20, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="0.8" />
-      <path d="M12 2L14.5 9.5" stroke="currentColor" strokeWidth="0.8" />
-      <path d="M19.66 7L13.5 10.5" stroke="currentColor" strokeWidth="0.8" />
-      <path d="M19.66 17L13 13" stroke="currentColor" strokeWidth="0.8" />
-      <path d="M12 22L10 14.5" stroke="currentColor" strokeWidth="0.8" />
-      <path d="M4.34 17L11 13.5" stroke="currentColor" strokeWidth="0.8" />
-      <path d="M4.34 7L10.5 10.5" stroke="currentColor" strokeWidth="0.8" />
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="0.8" />
-    </svg>
   );
 }
 
@@ -86,7 +66,6 @@ function FeatureCard({
       }`}
       style={{ transitionDelay: `${index * 80}ms` }}
     >
-      {/* Corner accent — brand teal */}
       <div className="absolute top-0 left-0 h-4 w-px" style={{ background: "rgba(176,251,205,0.12)" }} />
       <div className="absolute top-0 left-0 h-px w-4" style={{ background: "rgba(176,251,205,0.12)" }} />
 
@@ -124,17 +103,14 @@ const FILM_PHOTOS = [
 ];
 
 function FilmStrip() {
-  // Double for seamless loop — animation scrolls exactly -50%
   const frames = [...FILM_PHOTOS, ...FILM_PHOTOS];
   return (
     <div className="relative overflow-hidden">
-      {/* Sprocket holes top */}
       <div className="absolute top-0 left-0 right-0 z-10 flex justify-between px-1">
         {Array.from({ length: 60 }).map((_, i) => (
           <div key={i} className="h-2 w-3 rounded-[1px] bg-white/[0.06]" />
         ))}
       </div>
-      {/* Scrolling frames — uniform mr keeps per-item width constant so -50% is exact */}
       <div
         className="flex items-center py-4 animate-[filmScroll_30s_linear_infinite]"
         style={{ width: "max-content" }}
@@ -154,13 +130,11 @@ function FilmStrip() {
           </div>
         ))}
       </div>
-      {/* Sprocket holes bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-between px-1">
         {Array.from({ length: 60 }).map((_, i) => (
           <div key={i} className="h-2 w-3 rounded-[1px] bg-white/[0.06]" />
         ))}
       </div>
-      {/* Edge fades */}
       <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-24 bg-gradient-to-r from-[#050507] to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-24 bg-gradient-to-l from-[#050507] to-transparent" />
     </div>
@@ -198,14 +172,12 @@ function WorkflowSteps() {
           }`}
           style={{ transitionDelay: `${i * 150}ms` }}
         >
-          {/* Step number */}
           <div
             className="mb-4 text-[40px] font-extralight tracking-wider text-white/[0.04]"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             {step}
           </div>
-          {/* Connection line */}
           {i < 2 && (
             <div
               className={`absolute right-0 top-8 hidden sm:block h-px bg-gradient-to-r from-white/[0.06] to-transparent transition-all duration-700 ${
@@ -240,14 +212,12 @@ function AnimatedCounter({ end, suffix = "" }: { end: number; suffix?: string })
       ([entry]) => {
         if (entry.isIntersecting && !hasAnimated.current) {
           hasAnimated.current = true;
-          let start = 0;
           const duration = 1200;
           const startTime = performance.now();
           const step = (time: number) => {
             const progress = Math.min((time - startTime) / duration, 1);
             const eased = 1 - Math.pow(1 - progress, 3);
-            start = Math.floor(eased * end);
-            setCount(start);
+            setCount(Math.floor(eased * end));
             if (progress < 1) requestAnimationFrame(step);
           };
           requestAnimationFrame(step);
@@ -267,7 +237,7 @@ function AnimatedCounter({ end, suffix = "" }: { end: number; suffix?: string })
   );
 }
 
-// ── Floating shutter button ──────────────────────────────────
+// ── Floating shutter button (hero CTA) ───────────────────────
 function ShutterButton() {
   const [pressed, setPressed] = useState(false);
 
@@ -279,24 +249,20 @@ function ShutterButton() {
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
     >
-      {/* Sonar pulse rings — brand teal */}
-      <div className="absolute h-20 w-20 rounded-full animate-[sonarPing_3s_ease-out_infinite]" style={{ border: "1px solid rgba(176,251,205,0.1)" }} />
-      <div className="absolute h-20 w-20 rounded-full animate-[sonarPing_3s_ease-out_1s_infinite]" style={{ border: "1px solid rgba(176,251,205,0.1)" }} />
+      {/* Sonar pulse rings */}
+      <div className="absolute h-20 w-20 rounded-full animate-[sonarPing_3s_ease-out_infinite]" style={{ border: "1px solid rgba(176,251,205,0.08)" }} />
+      <div className="absolute h-20 w-20 rounded-full animate-[sonarPing_3s_ease-out_1s_infinite]" style={{ border: "1px solid rgba(176,251,205,0.08)" }} />
       {/* Outer ring */}
       <div
         className={`absolute h-16 w-16 rounded-full border-2 transition-all duration-300 ${
-          pressed
-            ? "scale-95"
-            : "group-hover:border-white/40"
+          pressed ? "scale-95" : "group-hover:border-white/40"
         }`}
         style={{ borderColor: pressed ? "rgba(176,251,205,0.4)" : "rgba(176,251,205,0.2)" }}
       />
       {/* Inner circle */}
       <div
         className={`h-12 w-12 rounded-full transition-all duration-200 ${
-          pressed
-            ? "scale-90"
-            : "group-hover:shadow-[0_0_30px_rgba(176,251,205,0.2)]"
+          pressed ? "scale-90" : "group-hover:shadow-[0_0_30px_rgba(176,251,205,0.2)]"
         }`}
         style={{ background: pressed ? "rgba(176,251,205,0.6)" : "rgba(176,251,205,0.85)" }}
       />
@@ -359,7 +325,6 @@ function CtaSection() {
           e.currentTarget.style.background = "rgba(176,251,205,0.04)";
         }}
       >
-        {/* Hover shine sweep */}
         <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" style={{ background: "linear-gradient(to right, transparent, rgba(176,251,205,0.06), transparent)" }} />
         <span
           className="relative text-[11px] tracking-[0.3em] uppercase transition-colors duration-300"
@@ -401,7 +366,6 @@ export default function LandingPage() {
   }, []);
 
   const heroOpacity = Math.max(0, 1 - scrollY / 600);
-  const heroScale = 1 + scrollY * 0.0003;
 
   return (
     <div className="relative min-h-screen bg-[#050507] text-white selection:bg-white/20">
@@ -415,7 +379,7 @@ export default function LandingPage() {
       />
 
       {/* ═══════════════════════════════════════════════════════════
-          HERO SECTION
+          HERO SECTION — Logo-centered, clean vertical stack
          ═══════════════════════════════════════════════════════════ */}
       <section className="relative flex h-screen flex-col items-center justify-center overflow-hidden">
         {/* Radial vignette */}
@@ -423,122 +387,106 @@ export default function LandingPage() {
           className="absolute inset-0 z-10"
           style={{
             background:
-              "radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, rgba(5,5,7,0.4) 60%, rgba(5,5,7,0.95) 100%)",
+              "radial-gradient(ellipse 65% 55% at 50% 48%, transparent 0%, rgba(5,5,7,0.5) 55%, rgba(5,5,7,0.97) 100%)",
           }}
         />
 
-        {/* Subtle ambient light — brand teal */}
+        {/* Soft brand glow behind logo area */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 50% 40% at 50% 45%, rgba(176, 251, 205, 0.04) 0%, transparent 70%)",
-            transform: `scale(${heroScale})`,
-            transition: "transform 0.1s linear",
+              "radial-gradient(ellipse 35% 30% at 50% 42%, rgba(176, 251, 205, 0.035) 0%, transparent 70%)",
           }}
         />
 
-        {/* Grid lines */}
-        <div className="absolute inset-0 opacity-[0.04]">
+        {/* Subtle grid lines */}
+        <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white" />
           <div className="absolute right-1/3 top-0 bottom-0 w-px bg-white" />
           <div className="absolute top-1/3 left-0 right-0 h-px bg-white" />
           <div className="absolute bottom-1/3 left-0 right-0 h-px bg-white" />
         </div>
 
-        {/* Slowly rotating aperture behind title */}
-        <div className="absolute left-1/2 top-1/2 z-[5] -translate-x-1/2 -translate-y-1/2 opacity-[0.025]">
-          <div className="animate-[spinSlow_40s_linear_infinite]">
-            <ApertureIcon size={500} />
-          </div>
+        {/* Viewfinder corners */}
+        <div className="absolute inset-10 sm:inset-16 z-20">
+          <ViewfinderCorners />
         </div>
 
-        {/* Lens flare sweep */}
+        {/* Lens flare sweep — very subtle */}
         <div
-          className="pointer-events-none absolute inset-0 z-[15] animate-[flareSweep_6s_ease-in-out_infinite]"
+          className="pointer-events-none absolute inset-0 z-[15] animate-[flareSweep_8s_ease-in-out_infinite]"
           style={{
-            background: "linear-gradient(105deg, transparent 40%, rgba(176,251,205,0.03) 45%, rgba(255,255,255,0.04) 50%, rgba(176,251,205,0.03) 55%, transparent 60%)",
+            background: "linear-gradient(105deg, transparent 40%, rgba(176,251,205,0.02) 47%, rgba(255,255,255,0.025) 50%, rgba(176,251,205,0.02) 53%, transparent 60%)",
             backgroundSize: "200% 100%",
           }}
         />
 
-        {/* Center crosshair */}
-        <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 opacity-20">
-          <div className="absolute -top-6 left-1/2 h-4 w-px -translate-x-1/2 bg-white" />
-          <div className="absolute -bottom-6 left-1/2 h-4 w-px -translate-x-1/2 bg-white" />
-          <div className="absolute -left-6 top-1/2 h-px w-4 -translate-y-1/2 bg-white" />
-          <div className="absolute -right-6 top-1/2 h-px w-4 -translate-y-1/2 bg-white" />
-          <div className="h-1.5 w-1.5 rounded-full border" style={{ borderColor: "rgba(176,251,205,0.35)" }} />
-        </div>
-
-        {/* Viewfinder corners */}
-        <div className="absolute inset-8 sm:inset-16 z-20">
-          <ViewfinderCorners />
-        </div>
-
-        {/* Main content */}
+        {/* ── Hero content: vertically stacked, logo dominant ── */}
         <div
           className="relative z-30 flex flex-col items-center px-6 text-center"
           style={{ opacity: heroOpacity }}
         >
-          {/* Top label */}
+          {/* Logo — big, proud, centered */}
           <div
-            className={`mb-8 flex items-center gap-3 transition-all duration-1000 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`relative mb-6 transition-all duration-[1200ms] ease-out ${
+              mounted
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-90 translate-y-4"
             }`}
           >
-            <div className="h-px w-8" style={{ background: "rgba(176,251,205,0.15)" }} />
-            <span
-              className="text-[10px] tracking-[0.4em] uppercase"
-              style={{ fontFamily: "var(--font-geist-mono)", color: "rgba(176,251,205,0.3)" }}
-            >
-              Virtual Photography Studio
-            </span>
-            <div className="h-px w-8" style={{ background: "rgba(176,251,205,0.15)" }} />
+            {/* Glow behind logo */}
+            <div
+              className="absolute inset-0 blur-3xl rounded-full"
+              style={{
+                background: "rgba(176,251,205,0.15)",
+                transform: "scale(2.2)",
+              }}
+            />
+            <Image
+              src="/logo.png"
+              alt="CamCraft"
+              width={200}
+              height={200}
+              className="relative h-28 w-28 sm:h-36 sm:w-36 object-contain drop-shadow-[0_0_40px_rgba(176,251,205,0.12)]"
+              priority
+            />
           </div>
 
-          {/* Logo lockup */}
-          <div
-            className={`relative flex items-center gap-4 sm:gap-6 transition-all duration-1000 delay-100 ${
-              mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-95"
+          {/* Wordmark — stacked, centered */}
+          <h1
+            className={`transition-all duration-[1200ms] delay-150 ease-out ${
+              mounted
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-6"
             }`}
           >
-            {/* Logo mark with teal glow */}
-            <div className="relative shrink-0">
-              <div
-                className="absolute inset-0 blur-2xl opacity-30 rounded-full"
-                style={{ background: "var(--brand)", transform: "scale(1.5)" }}
-              />
-              <Image
-                src="/logo.png"
-                alt="CamCraft"
-                width={100}
-                height={100}
-                className="relative h-16 w-16 sm:h-24 sm:w-24 object-contain drop-shadow-[0_0_20px_rgba(176,251,205,0.2)]"
-                priority
-              />
-            </div>
-            {/* Wordmark */}
-            <h1>
-              <span
-                className="block text-[clamp(2.5rem,6vw,5.5rem)] font-light tracking-[0.12em] uppercase leading-[0.9]"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
-              >
-                Cam
-              </span>
-              <span
-                className="block text-[clamp(2.5rem,6vw,5.5rem)] font-extralight tracking-[0.12em] uppercase leading-[0.9]"
-                style={{ fontFamily: "var(--font-geist-sans)", color: "var(--brand)" }}
-              >
-                Craft
-              </span>
-            </h1>
-          </div>
+            <span
+              className="block text-[clamp(2.8rem,7vw,6rem)] font-light tracking-[0.15em] uppercase leading-[0.85]"
+              style={{ fontFamily: "var(--font-geist-sans)" }}
+            >
+              Cam
+            </span>
+            <span
+              className="block text-[clamp(2.8rem,7vw,6rem)] font-extralight tracking-[0.15em] uppercase leading-[0.85]"
+              style={{ fontFamily: "var(--font-geist-sans)", color: "var(--brand)" }}
+            >
+              Craft
+            </span>
+          </h1>
+
+          {/* Thin separator line */}
+          <div
+            className={`mt-6 mb-5 h-px w-12 transition-all duration-1000 delay-300 ${
+              mounted ? "opacity-100 scale-x-100" : "opacity-0 scale-x-0"
+            }`}
+            style={{ background: "rgba(176,251,205,0.2)" }}
+          />
 
           {/* Tagline */}
           <p
-            className={`mt-8 max-w-md text-[13px] leading-relaxed text-white/25 transition-all duration-1000 delay-200 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`max-w-sm text-[13px] leading-relaxed text-white/25 transition-all duration-1000 delay-300 ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
             }`}
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
@@ -547,18 +495,18 @@ export default function LandingPage() {
             Capture moments that never existed.
           </p>
 
-          {/* CTA */}
+          {/* Shutter CTA */}
           <div
-            className={`mt-12 transition-all duration-1000 delay-300 ${
+            className={`mt-12 transition-all duration-1000 delay-500 ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
             <ShutterButton />
           </div>
 
-          {/* Shutter label */}
+          {/* Label */}
           <span
-            className={`mt-5 text-[9px] tracking-[0.5em] uppercase transition-all duration-1000 delay-500 ${
+            className={`mt-5 text-[9px] tracking-[0.5em] uppercase transition-all duration-1000 delay-700 ${
               mounted ? "opacity-100" : "opacity-0"
             }`}
             style={{ fontFamily: "var(--font-geist-mono)", color: "rgba(176,251,205,0.2)" }}
@@ -579,13 +527,13 @@ export default function LandingPage() {
           ].map(({ label, desc }) => (
             <div key={label} className="flex flex-col items-center gap-1">
               <span
-                className="text-[11px] tracking-wider text-white/30"
+                className="text-[11px] tracking-wider text-white/20"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 {label}
               </span>
               <span
-                className="text-[8px] tracking-[0.3em] uppercase text-white/10"
+                className="text-[8px] tracking-[0.3em] uppercase text-white/8"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 {desc}
@@ -601,8 +549,8 @@ export default function LandingPage() {
           }`}
           style={{ opacity: heroOpacity }}
         >
-          <div className="h-8 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(176,251,205,0.2))" }} />
-          <div className="h-1.5 w-1.5 animate-bounce rounded-full" style={{ background: "rgba(176,251,205,0.35)" }} />
+          <div className="h-8 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(176,251,205,0.15))" }} />
+          <div className="h-1.5 w-1.5 animate-bounce rounded-full" style={{ background: "rgba(176,251,205,0.3)" }} />
         </div>
       </section>
 
@@ -618,7 +566,6 @@ export default function LandingPage() {
          ═══════════════════════════════════════════════════════════ */}
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-5xl px-6 sm:px-10">
-          {/* Section header */}
           <div className="mb-16 flex items-center gap-4">
             <div className="h-px flex-1" style={{ background: "linear-gradient(to right, rgba(176,251,205,0.1), transparent)" }} />
             <span
@@ -764,7 +711,6 @@ export default function LandingPage() {
           FINAL CTA
          ═══════════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden border-t border-white/[0.04] py-28 sm:py-36">
-        {/* Ambient glow — brand teal */}
         <div
           className="absolute inset-0 opacity-40"
           style={{
