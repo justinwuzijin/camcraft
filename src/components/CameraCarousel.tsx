@@ -645,38 +645,43 @@ const SpecsPanel = ({ cameraId, visible }: { cameraId: string; visible: boolean 
   const specs = CAMERA_SPECS[cameraId];
   if (!specs) return null;
 
+  const specRows = [
+    { label: "Body", value: specs.body },
+    { label: "Lens", value: specs.lens },
+    { label: "Focal Length", value: specs.focalLength, mono: true },
+    { label: "ISO", value: specs.iso, mono: true },
+    { label: "Sensor", value: specs.sensor },
+    { label: "Resolution", value: specs.resolution, mono: true },
+  ];
+
   return (
     <div
-      className={`absolute left-16 top-1/2 -translate-y-1/2 w-[420px] bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-8 transition-all duration-500 ${
+      className={`absolute left-10 top-1/2 -translate-y-1/2 w-[360px] bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6 transition-all duration-500 ${
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8 pointer-events-none"
       }`}
     >
-      <h3 className="text-2xl font-semibold text-white mb-6">Specifications</h3>
-      <div className="space-y-5">
-        <div>
-          <p className="text-sm text-white/40 uppercase tracking-wider">Camera Body</p>
-          <p className="text-lg text-white">{specs.body}</p>
-        </div>
-        <div>
-          <p className="text-sm text-white/40 uppercase tracking-wider">Lens</p>
-          <p className="text-lg text-white">{specs.lens}</p>
-        </div>
-        <div>
-          <p className="text-sm text-white/40 uppercase tracking-wider">Focal Length</p>
-          <p className="text-lg text-white">{specs.focalLength}</p>
-        </div>
-        <div>
-          <p className="text-sm text-white/40 uppercase tracking-wider">ISO Range</p>
-          <p className="text-lg text-white">{specs.iso}</p>
-        </div>
-        <div>
-          <p className="text-sm text-white/40 uppercase tracking-wider">Sensor</p>
-          <p className="text-lg text-white">{specs.sensor}</p>
-        </div>
-        <div>
-          <p className="text-sm text-white/40 uppercase tracking-wider">Resolution</p>
-          <p className="text-lg text-white">{specs.resolution}</p>
-        </div>
+      <div
+        className="text-[10px] tracking-[0.25em] uppercase text-white/25 mb-5"
+        style={{ fontFamily: "var(--font-geist-mono)" }}
+      >
+        Specifications
+      </div>
+
+      <div className="space-y-3">
+        {specRows.map((row, i) => (
+          <div key={row.label}>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-xs text-white/30 shrink-0">{row.label}</span>
+              <span
+                className="text-sm text-white/75 text-right"
+                style={row.mono ? { fontFamily: "var(--font-geist-mono)" } : undefined}
+              >
+                {row.value}
+              </span>
+            </div>
+            {i === 1 && <div className="h-px bg-white/[0.06] mt-3" />}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -765,14 +770,22 @@ export const CameraCarousel = () => {
   return (
     <div
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden bg-[#0A0A0A]"
+      className="relative h-screen w-full overflow-hidden bg-[#060608]"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Grain overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 z-50 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+        }}
+      />
       {/* Grid background with low opacity */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-repeat opacity-20"
+        className="absolute inset-0 bg-cover bg-center bg-repeat opacity-[0.08]"
         style={{ backgroundImage: 'url(/grid-background.png)' }}
       />
       {/* 3D Canvas */}
@@ -789,32 +802,62 @@ export const CameraCarousel = () => {
       {isExploded && (
         <button
           onClick={() => setIsExploded(false)}
-          className="absolute top-8 left-8 px-6 py-2.5 bg-[#B0FBCD]/10 hover:bg-[#B0FBCD]/20 border border-[#B0FBCD]/30 rounded-full text-[#B0FBCD] text-sm font-medium transition-all duration-300 flex items-center gap-2"
+          className="absolute top-6 left-6 z-30 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/[0.06] px-4 py-2 text-sm text-white/60 hover:text-white/80 hover:bg-black/80 transition-all"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="shrink-0"
+          >
+            <path
+              d="M10 12L6 8L10 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
-          Back
+          <span
+            className="text-xs tracking-wider"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          >
+            Back
+          </span>
         </button>
       )}
 
       {/* Camera name overlay (always visible, repositioned when exploded) */}
-      <div className={`absolute text-center pointer-events-none transition-all duration-500 ${
-        isExploded 
-          ? "top-8 right-8 text-right" 
-          : "top-24 left-1/2 -translate-x-1/2"
+      <div className={`absolute pointer-events-none transition-all duration-500 ${
+        isExploded
+          ? "top-6 right-6 text-right"
+          : "top-20 left-1/2 -translate-x-1/2 text-center"
       }`}>
-        <h1 className={`font-semibold text-white tracking-tight transition-all duration-300 ${
-          isExploded ? "text-2xl" : "text-3xl md:text-4xl"
-        }`}>
+        <div
+          className="text-[9px] tracking-[0.3em] uppercase text-white/20 mb-1.5"
+          style={{ fontFamily: "var(--font-geist-mono)" }}
+        >
+          {currentCamera.date}
+        </div>
+        <h1
+          className={`text-white/90 font-light tracking-tight transition-all duration-300 ${
+            isExploded ? "text-xl" : "text-2xl md:text-3xl"
+          }`}
+        >
           {currentCamera.name}
         </h1>
-        <p className="text-white/50 text-sm mt-1">{currentCamera.description}</p>
+        <p
+          className="text-white/30 mt-1 text-[10px] tracking-[0.2em] uppercase"
+          style={{ fontFamily: "var(--font-geist-mono)" }}
+        >
+          {currentCamera.description}
+        </p>
       </div>
 
       {/* Camera Equipment HUD - Minecraft-style (visible when exploded) */}
       {isExploded && (
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 transition-all duration-500 animate-in fade-in slide-in-from-right-4">
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 transition-all duration-500 animate-in fade-in slide-in-from-right-4 rounded-xl border border-white/[0.06] bg-[#0a0a0c]/60 backdrop-blur-md">
           <CameraEquipmentHUD
             loadout={CAMERA_EQUIPMENT[currentCamera.id]}
             position="right"
@@ -823,44 +866,47 @@ export const CameraCarousel = () => {
         </div>
       )}
 
-      {/* Navigation arrows (hide when exploded) - just arrows, no background */}
+      {/* Navigation arrows (hide when exploded) */}
       {!isExploded && (
         <>
           <button
             onClick={goPrev}
-            className="absolute left-6 top-1/2 -translate-y-1/2 p-2 hover:opacity-100 opacity-60 transition-opacity"
+            className="absolute left-5 top-1/2 -translate-y-1/2 rounded-full border border-white/[0.06] bg-black/40 p-2.5 text-white/40 backdrop-blur-md transition-all hover:border-white/[0.12] hover:text-white/70 sm:left-6"
             aria-label="Previous camera"
           >
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M12 15L7 10L12 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
           <button
             onClick={goNext}
-            className="absolute right-6 top-1/2 -translate-y-1/2 p-2 hover:opacity-100 opacity-60 transition-opacity"
+            className="absolute right-5 top-1/2 -translate-y-1/2 rounded-full border border-white/[0.06] bg-black/40 p-2.5 text-white/40 backdrop-blur-md transition-all hover:border-white/[0.12] hover:text-white/70 sm:right-6"
             aria-label="Next camera"
           >
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M8 5L13 10L8 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </>
       )}
 
       {/* Explode button (when not exploded) / Try out button (when exploded) */}
-      <div className="absolute bottom-40 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20">
         {isExploded ? (
           <Link
             href="/generate"
-            className="px-12 py-4 bg-[#B0FBCD]/20 hover:bg-[#B0FBCD]/30 border border-[#B0FBCD]/40 rounded-full text-[#B0FBCD] text-lg font-semibold transition-all duration-300 inline-block"
+            className="group relative inline-block px-10 py-3.5 bg-[#B0FBCD]/[0.08] hover:bg-[#B0FBCD]/[0.14] border border-[#B0FBCD]/20 hover:border-[#B0FBCD]/35 rounded-lg text-[#B0FBCD]/80 hover:text-[#B0FBCD] text-sm tracking-wider uppercase transition-all duration-300"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
           >
-            Try out
+            <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: "0 0 40px rgba(176, 251, 205, 0.08)" }} />
+            <span className="relative">Try Out</span>
           </Link>
         ) : (
           <button
             onClick={() => setIsExploded(true)}
-            className="px-8 py-3 bg-[#B0FBCD]/10 hover:bg-[#B0FBCD]/20 border border-[#B0FBCD]/30 rounded-full text-[#B0FBCD] text-sm font-medium transition-all duration-300"
+            className="px-8 py-3 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] hover:border-white/[0.12] rounded-lg text-white/50 hover:text-white/70 text-xs tracking-[0.2em] uppercase transition-all duration-300"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Explode
           </button>
@@ -868,42 +914,60 @@ export const CameraCarousel = () => {
       </div>
 
       {/* Horizontal Timeline (hide when exploded) */}
-      <div className={`absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-xl px-8 transition-opacity duration-300 ${isExploded ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-lg px-8 transition-opacity duration-300 ${isExploded ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        {/* Gradient fade lines */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        </div>
+
         <div className="relative">
-          <div className="absolute top-[10px] left-8 right-8 h-[1px] bg-white/20" />
+          {/* Track */}
+          <div className="absolute top-[5px] left-8 right-8 h-px bg-white/[0.06]" />
           <div
-            className="absolute top-[10px] left-8 h-[1px] bg-white/40 transition-all duration-500"
+            className="absolute top-[5px] left-8 h-px bg-[#B0FBCD]/30 transition-all duration-500"
             style={{ width: `calc(${(currentIndex / (CAMERAS.length - 1)) * 100}% * 0.85)` }}
           />
 
           <div className="relative flex justify-between px-4">
-            {CAMERAS.map((camera, index) => (
-              <button
-                key={camera.id}
-                onClick={() => goToCamera(index)}
-                className="flex flex-col items-center group"
-              >
-                <div
-                  className={`w-5 h-5 rounded-full transition-all duration-300 ${
-                    index === currentIndex
-                      ? "bg-white scale-125"
-                      : "bg-white/30 group-hover:bg-white/50"
-                  }`}
-                />
-                <span
-                  className={`mt-3 text-sm font-medium transition-all duration-300 ${
-                    index === currentIndex ? "text-white" : "text-white/40 group-hover:text-white/60"
-                  }`}
+            {CAMERAS.map((camera, index) => {
+              const isActive = index === currentIndex;
+              return (
+                <button
+                  key={camera.id}
+                  onClick={() => goToCamera(index)}
+                  className="flex flex-col items-center group"
                 >
-                  {camera.date}
-                </span>
-                {index === currentIndex && (
-                  <span className="mt-1 text-xs text-white/60">
-                    {camera.name}
+                  <div className="relative">
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                        isActive
+                          ? "bg-[#B0FBCD] scale-125"
+                          : "bg-white/15 group-hover:bg-white/30"
+                      }`}
+                    />
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-full bg-[#B0FBCD]/30 animate-ping" />
+                    )}
+                  </div>
+                  <span
+                    className={`mt-3 text-[10px] tracking-[0.15em] transition-all duration-300 ${
+                      isActive ? "text-white/70" : "text-white/25 group-hover:text-white/40"
+                    }`}
+                    style={{ fontFamily: "var(--font-geist-mono)" }}
+                  >
+                    {camera.date}
                   </span>
-                )}
-              </button>
-            ))}
+                  {isActive && (
+                    <span
+                      className="mt-0.5 text-[9px] tracking-[0.2em] uppercase text-white/30"
+                      style={{ fontFamily: "var(--font-geist-mono)" }}
+                    >
+                      {camera.name}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import HandOverlay from "./HandOverlay";
+import SonyViewfinderHUD from "@/components/SonyViewfinderHUD";
 import { addGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
 
@@ -228,20 +229,34 @@ export default function PanoPage() {
               }}
             >
               {focusLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    <span className="text-xs text-white/80">Focusing...</span>
-                  </div>
+                <div className="absolute inset-0 bg-black/70">
+                  <SonyViewfinderHUD focusLoading={true} focusConfirmed={false} />
                 </div>
               )}
               {focusImage && !focusLoading && (
-                <img
-                  src={focusImage}
-                  alt="Focused shot"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
+                <>
+                  <img
+                    src={focusImage}
+                    alt="Focused shot"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                  <SonyViewfinderHUD focusLoading={false} focusConfirmed={true} />
+                </>
               )}
+            </div>
+          )}
+          {/* Sony viewfinder HUD — always visible on the viewfinder */}
+          {!focusLoading && !focusImage && (
+            <div
+              className="absolute overflow-hidden"
+              style={{
+                left: `${VF_LEFT * 100}%`,
+                top: `${VF_TOP * 100}%`,
+                width: `${VF_WIDTH * 100}%`,
+                height: `${VF_HEIGHT * 100}%`,
+              }}
+            >
+              <SonyViewfinderHUD />
             </div>
           )}
           <img

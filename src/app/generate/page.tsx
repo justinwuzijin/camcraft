@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import CityAutocomplete from "./CityAutocomplete";
 import HandOverlay from "@/app/pano/HandOverlay";
+import SonyViewfinderHUD from "@/components/SonyViewfinderHUD";
 import GestureTutorial from "@/components/GestureTutorial";
 import { addGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
@@ -56,23 +57,29 @@ function SliderControl({
   const displayIdx = value ?? fallback;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-white/80">{label}</span>
+        <span
+          className="text-[10px] tracking-[0.2em] uppercase text-white/25"
+          style={{ fontFamily: "var(--font-geist-mono)" }}
+        >
+          {label}
+        </span>
         <button
           type="button"
           onClick={() => onChange(isRandom ? fallback : null)}
-          className={`rounded-full px-3 py-0.5 text-xs font-medium transition-all ${
+          className={`rounded-full px-3 py-0.5 text-[10px] tracking-wider uppercase transition-all ${
             isRandom
-              ? "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10"
-              : "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10"
+              ? "text-white/20 hover:text-white/40"
+              : "text-[#B0FBCD]/60 hover:text-[#B0FBCD]/80"
           }`}
+          style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {isRandom ? "Any" : "Set"}
         </button>
       </div>
 
-      <div className={`transition-opacity ${isRandom ? "opacity-30" : "opacity-100"}`}>
+      <div className={`transition-opacity duration-300 ${isRandom ? "opacity-25" : "opacity-100"}`}>
         <input
           type="range"
           min={0}
@@ -82,14 +89,14 @@ function SliderControl({
           className="slider-track w-full"
           disabled={isRandom}
         />
-        <div className="mt-1 flex justify-between">
+        <div className="mt-1.5 flex justify-between">
           {options.map((opt, i) => (
             <span
               key={opt}
-              className={`text-[10px] leading-tight ${
-                i === displayIdx && !isRandom ? "text-[#B0FBCD]" : "text-white/30"
+              className={`text-[9px] tracking-wide leading-tight transition-colors duration-200 ${
+                i === displayIdx && !isRandom ? "text-[#B0FBCD]/80" : "text-white/20"
               }`}
-              style={{ width: `${100 / options.length}%`, textAlign: "center" }}
+              style={{ width: `${100 / options.length}%`, textAlign: "center", fontFamily: "var(--font-geist-mono)" }}
             >
               {opt}
             </span>
@@ -115,25 +122,34 @@ function ChipSelector({
   const isRandom = value === null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-white/80">{label}</span>
+        <span
+          className="text-[10px] tracking-[0.2em] uppercase text-white/25"
+          style={{ fontFamily: "var(--font-geist-mono)" }}
+        >
+          {label}
+        </span>
         {!isRandom && (
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="rounded-full px-3 py-0.5 text-xs font-medium bg-white/5 text-white/40 border border-white/10 hover:bg-white/10 transition-all"
+            className="text-[10px] tracking-wider uppercase text-white/20 hover:text-white/40 transition-colors"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Clear
           </button>
         )}
         {isRandom && (
-          <span className="rounded-full px-3 py-0.5 text-xs font-medium bg-white/5 text-white/40 border border-white/10">
+          <span
+            className="text-[10px] tracking-wider uppercase text-white/15"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          >
             Any
           </span>
         )}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {options.map((opt) => {
           const selected = value === opt.toLowerCase();
           return (
@@ -141,10 +157,10 @@ function ChipSelector({
               key={opt}
               type="button"
               onClick={() => onChange(selected ? null : opt.toLowerCase())}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-all ${
+              className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
                 selected
-                  ? "bg-[#B0FBCD]/15 border-[#B0FBCD]/40 text-[#B0FBCD]"
-                  : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/70"
+                  ? "bg-[#B0FBCD]/10 border-[#B0FBCD]/25 text-[#B0FBCD]/90"
+                  : "bg-white/[0.02] border-white/[0.06] text-white/30 hover:bg-white/[0.05] hover:text-white/50 hover:border-white/[0.12]"
               }`}
             >
               {opt}
@@ -478,20 +494,34 @@ export default function GeneratePage() {
                 }}
               >
                 {focusLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      <span className="text-xs text-white/80">Focusing...</span>
-                    </div>
+                  <div className="absolute inset-0 bg-black/70">
+                    <SonyViewfinderHUD focusLoading={true} focusConfirmed={false} />
                   </div>
                 )}
                 {focusImage && !focusLoading && (
-                  <img
-                    src={focusImage}
-                    alt="Focused shot"
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
+                  <>
+                    <img
+                      src={focusImage}
+                      alt="Focused shot"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <SonyViewfinderHUD focusLoading={false} focusConfirmed={true} />
+                  </>
                 )}
+              </div>
+            )}
+            {/* Sony viewfinder HUD — always visible on the viewfinder */}
+            {!focusLoading && !focusImage && (
+              <div
+                className="absolute overflow-hidden"
+                style={{
+                  left: `${VF_LEFT * 100}%`,
+                  top: `${VF_TOP * 100}%`,
+                  width: `${VF_WIDTH * 100}%`,
+                  height: `${VF_HEIGHT * 100}%`,
+                }}
+              >
+                <SonyViewfinderHUD />
               </div>
             )}
             <img
@@ -562,110 +592,269 @@ export default function GeneratePage() {
 
   // ── Configure mode ───────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12">
-        {/* Left column — form */}
-        <div className="w-full lg:w-1/2 max-w-2xl">
-          {/* Header */}
-          <div className="mb-8 text-center lg:text-left">
-            <h1 className="text-3xl font-bold text-white tracking-tight">
-              Generate Panorama
+    <div className="min-h-screen bg-[#060608] text-white">
+      {/* Grain overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+        }}
+      />
+
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="group flex items-center gap-2 text-white/40 transition-colors hover:text-white/70"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                className="transition-transform group-hover:-translate-x-0.5"
+              >
+                <path
+                  d="M11 13L7 9L11 5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-sm tracking-wide">Back</span>
+            </Link>
+            <div className="h-4 w-px bg-white/[0.08]" />
+            <h1
+              className="text-sm tracking-[0.25em] uppercase text-white/70"
+              style={{ fontFamily: "var(--font-geist-mono)" }}
+            >
+              Generate
             </h1>
-            <p className="mt-2 text-sm text-white/40">
-              Configure your scene or leave fields on Any to let the AI decide
-            </p>
           </div>
 
-          {/* Card */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md p-6 sm:p-8 space-y-6">
-            {/* Location input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-white/80">Location</label>
+          <Link
+            href="/gallery"
+            className="flex items-center gap-2 text-white/30 transition-colors hover:text-white/60"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+              <rect x="1" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="7" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="1" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="7" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
+            <span
+              className="text-xs tracking-wider"
+              style={{ fontFamily: "var(--font-geist-mono)" }}
+            >
+              Gallery
+            </span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="relative mx-auto max-w-[1600px] px-6 sm:px-10 py-8">
+        <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-16">
+          {/* Left column — form */}
+          <div
+            className="w-full lg:w-[560px] shrink-0"
+            style={{ animation: "fadeSlideIn 0.5s ease-out both" }}
+          >
+            {/* Section: Location */}
+            <div className="mb-8">
+              <div
+                className="text-[10px] tracking-[0.25em] uppercase text-white/25 mb-4"
+                style={{ fontFamily: "var(--font-geist-mono)" }}
+              >
+                Location
+              </div>
               <CityAutocomplete value={location} onChange={setLocation} onCoordinatesChange={setLocationCoords} />
             </div>
 
-            {/* Sliders */}
-            <SliderControl label="Time of Day" options={TIME_OPTIONS} value={timeOfDay} onChange={setTimeOfDay} />
-            <SliderControl label="Era" options={DECADE_OPTIONS} value={decade} onChange={setDecade} defaultIndex={6} />
-            <ChipSelector label="Setting" options={PLACE_TYPES} value={placeType} onChange={setPlaceType} />
-            <SliderControl label="Weather" options={WEATHER_OPTIONS} value={weather} onChange={setWeather} />
-            <SliderControl label="Crowd" options={CROWD_OPTIONS} value={crowd} onChange={setCrowd} />
+            <div className="h-px bg-white/[0.06] mb-8" />
+
+            {/* Section: Time & Era */}
+            <div
+              className="mb-8 space-y-6"
+              style={{ animation: "fadeSlideIn 0.5s ease-out 0.05s both" }}
+            >
+              <SliderControl label="Time of Day" options={TIME_OPTIONS} value={timeOfDay} onChange={setTimeOfDay} />
+              <SliderControl label="Era" options={DECADE_OPTIONS} value={decade} onChange={setDecade} defaultIndex={6} />
+            </div>
+
+            <div className="h-px bg-white/[0.06] mb-8" />
+
+            {/* Section: Environment */}
+            <div
+              className="mb-8 space-y-6"
+              style={{ animation: "fadeSlideIn 0.5s ease-out 0.1s both" }}
+            >
+              <ChipSelector label="Setting" options={PLACE_TYPES} value={placeType} onChange={setPlaceType} />
+              <SliderControl label="Weather" options={WEATHER_OPTIONS} value={weather} onChange={setWeather} />
+              <SliderControl label="Crowd" options={CROWD_OPTIONS} value={crowd} onChange={setCrowd} />
+            </div>
+
+            <div className="h-px bg-white/[0.06] mb-8" />
 
             {/* Generate button */}
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full py-4 rounded-full text-base font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-[#B0FBCD]/10 hover:bg-[#B0FBCD]/20 border border-[#B0FBCD]/30 text-[#B0FBCD]"
-            >
-              {isGenerating ? (
-                <span className="flex items-center justify-center gap-3">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
-                  </svg>
-                  Generating... This may take 15-30 seconds
-                </span>
-              ) : (
-                "Generate Panorama"
-              )}
-            </button>
+            <div style={{ animation: "fadeSlideIn 0.5s ease-out 0.15s both" }}>
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="group relative w-full py-3.5 rounded-lg text-sm tracking-wider uppercase transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-[#B0FBCD]/[0.08] hover:bg-[#B0FBCD]/[0.14] border border-[#B0FBCD]/20 hover:border-[#B0FBCD]/35 text-[#B0FBCD]/80 hover:text-[#B0FBCD]"
+                style={{ fontFamily: "var(--font-geist-mono)" }}
+              >
+                {/* Subtle glow behind button on hover */}
+                <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: "0 0 40px rgba(176, 251, 205, 0.06)" }} />
+                {isGenerating ? (
+                  <span className="relative flex items-center justify-center gap-3">
+                    <div className="relative h-4 w-4">
+                      <div className="absolute inset-0 rounded-full border border-[#B0FBCD]/20" />
+                      <div className="absolute inset-0 animate-spin rounded-full border border-transparent border-t-[#B0FBCD]/60" />
+                    </div>
+                    Generating&hellip;
+                  </span>
+                ) : (
+                  <span className="relative">Generate Panorama</span>
+                )}
+              </button>
 
-            {/* Error message */}
-            {error && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                {error}
-              </div>
-            )}
+              {/* Error message */}
+              {error && (
+                <div className="mt-4 rounded-lg border border-red-500/15 bg-red-500/[0.06] px-4 py-3 text-xs text-red-400/80">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-10 flex items-center justify-center gap-3">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+              <span
+                className="text-[10px] tracking-[0.3em] uppercase text-white/15"
+                style={{ fontFamily: "var(--font-geist-mono)" }}
+              >
+                Gemini &middot; 360&deg;
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            </div>
           </div>
 
-          {/* Footer hint */}
-          <p className="mt-4 text-center lg:text-left text-xs text-white/20">
-            Powered by Gemini &middot; Images are generated as equirectangular panoramas for 360&deg; viewing
-          </p>
-        </div>
+          {/* Right column — globe */}
+          <div className="hidden lg:flex flex-1 flex-col items-center justify-center sticky top-24">
+            <RotatingEarth width={700} height={700} targetLocation={locationCoords} />
 
-        {/* Right column — globe */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center">
-          <RotatingEarth width={750} height={750} targetLocation={locationCoords} />
+            {/* Targeting readout */}
+            <div className="w-full max-w-[340px] mt-4">
+              {/* Crosshair divider */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/[0.06]" />
+                <div className={`relative h-2.5 w-2.5 rounded-full transition-all duration-700 ${
+                  locationCoords ? "bg-[#B0FBCD]/60" : "bg-white/[0.08]"
+                }`}>
+                  {locationCoords && (
+                    <div className="absolute inset-0 rounded-full bg-[#B0FBCD]/40 animate-ping" />
+                  )}
+                </div>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/[0.06]" />
+              </div>
+
+              <div className={`flex items-center justify-between transition-opacity duration-500 ${
+                locationCoords ? "opacity-100" : "opacity-40"
+              }`}>
+                {/* Status label */}
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[9px] tracking-[0.3em] uppercase transition-colors duration-500 ${
+                      locationCoords ? "text-[#B0FBCD]/50" : "text-white/15"
+                    }`}
+                    style={{ fontFamily: "var(--font-geist-mono)" }}
+                  >
+                    {locationCoords ? "Locked" : "Standby"}
+                  </span>
+                </div>
+
+                {/* Coordinates */}
+                <div
+                  className="text-[10px] tracking-wider text-white/20 transition-colors duration-500"
+                  style={{ fontFamily: "var(--font-geist-mono)" }}
+                >
+                  {locationCoords
+                    ? `${Math.abs(locationCoords[1]).toFixed(2)}°${locationCoords[1] >= 0 ? "N" : "S"} ${Math.abs(locationCoords[0]).toFixed(2)}°${locationCoords[0] >= 0 ? "E" : "W"}`
+                    : "——.——° —— .——°"
+                  }
+                </div>
+              </div>
+
+              {/* City name */}
+              {location && (
+                <div
+                  className="mt-2 text-center"
+                  style={{ animation: "fadeSlideIn 0.4s ease-out both" }}
+                >
+                  <span
+                    className="text-xs tracking-[0.15em] uppercase text-white/50"
+                    style={{ fontFamily: "var(--font-geist-mono)" }}
+                  >
+                    {location}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
 
       {/* Custom slider styling */}
-      <style jsx>{`
+      <style jsx global>{`
         .slider-track {
           -webkit-appearance: none;
           appearance: none;
-          height: 4px;
-          border-radius: 2px;
-          background: rgba(255, 255, 255, 0.1);
+          height: 2px;
+          border-radius: 1px;
+          background: rgba(255, 255, 255, 0.06);
           outline: none;
         }
         .slider-track::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 16px;
-          height: 16px;
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
           background: #B0FBCD;
           cursor: pointer;
-          box-shadow: 0 0 8px rgba(176, 251, 205, 0.4);
+          box-shadow: 0 0 12px rgba(176, 251, 205, 0.25);
         }
         .slider-track::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
+          width: 12px;
+          height: 12px;
           border-radius: 50%;
           background: #B0FBCD;
           cursor: pointer;
           border: none;
-          box-shadow: 0 0 8px rgba(176, 251, 205, 0.4);
+          box-shadow: 0 0 12px rgba(176, 251, 205, 0.25);
         }
         .slider-track:disabled::-webkit-slider-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.1);
           box-shadow: none;
         }
         .slider-track:disabled::-moz-range-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.1);
           box-shadow: none;
+        }
+        @keyframes fadeSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
       `}</style>
 

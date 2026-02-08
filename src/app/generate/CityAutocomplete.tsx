@@ -116,11 +116,11 @@ export default function CityAutocomplete({
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder="e.g. Tokyo, Paris, New York..."
-        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#B0FBCD]/40 focus:bg-white/[0.07] transition-all"
+        className="w-full rounded-lg border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:border-[#B0FBCD]/25 focus:bg-white/[0.05] transition-all"
         autoComplete="off"
       />
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] shadow-xl shadow-black/40">
+        <ul className="absolute z-50 mt-1.5 w-full overflow-hidden rounded-lg border border-white/[0.06] bg-[#0c0c0e] shadow-xl shadow-black/60 backdrop-blur-xl">
           {suggestions.map((s, i) => (
             <li
               key={s.id}
@@ -128,13 +128,13 @@ export default function CityAutocomplete({
               onMouseEnter={() => setActiveIdx(i)}
               className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
                 i === activeIdx
-                  ? "bg-[#B0FBCD]/10 text-[#B0FBCD]"
-                  : "text-white/70 hover:bg-white/5"
+                  ? "bg-[#B0FBCD]/[0.07] text-[#B0FBCD]/90"
+                  : "text-white/60 hover:bg-white/[0.03]"
               }`}
             >
-              <span className="font-medium text-white/90">{s.city}</span>
+              <span className="font-medium text-white/80">{s.city}</span>
               {s.fullName !== s.city && (
-                <span className="text-white/40">
+                <span className="text-white/30">
                   {s.fullName.slice(s.city.length)}
                 </span>
               )}

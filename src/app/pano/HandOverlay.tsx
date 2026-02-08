@@ -482,7 +482,7 @@ export default function HandOverlay({
       </div>
       <div
         ref={logBoxRef}
-        className="absolute left-4 top-4 z-20 rounded-lg border border-white/20 bg-black/80 px-3 py-2 font-mono text-xs text-white shadow-lg"
+        className="absolute left-4 bottom-4 z-20 rounded-lg border border-white/20 bg-black/80 px-3 py-2 font-mono text-xs text-white shadow-lg"
         aria-live="polite"
       >
         Hands detected: -
