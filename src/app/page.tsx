@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { preloadCameraModels } from "@/utils/preloadModels";
 
 // ── Scroll-triggered reveal hook ─────────────────────────────
 function useReveal(threshold = 0.15) {
@@ -459,6 +460,8 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true);
+    // Start preloading 3D models immediately so they're ready when user navigates
+    preloadCameraModels();
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
