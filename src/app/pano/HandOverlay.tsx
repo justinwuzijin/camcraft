@@ -385,6 +385,9 @@ export default function HandOverlay({
             rightIdx >= 0 && rightIdx < pictureFrameDebug.length
               ? pictureFrameDebug[rightIdx]
               : null;
+          const leftIdx = handednessLabels.findIndex(
+            (h) => h?.toLowerCase() === "left"
+          );
           const pfLines =
             handsCount === 0
               ? ["PF: (no hands)"]
@@ -407,6 +410,29 @@ export default function HandOverlay({
                         `PF (right): ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
                       ];
                     })();
+          const focusLines =
+            handsCount === 0
+              ? ["Focus (left): (no hands)"]
+              : leftIdx === -1
+                ? ["Focus (left): (no left hand)"]
+                : focusDebug === null
+                  ? ["Focus (left): (no landmarks)"]
+                  : (() => {
+                      const h = focusDebug;
+                      const fails: string[] = [];
+                      if (!h.indexExtended) fails.push("idx");
+                      if (!h.thumbExtended) fails.push("thumb");
+                      if (!h.thumbIndexSpread) fails.push("spread");
+                      if (!h.middleCurl) fails.push("mid");
+                      if (!h.ringCurl) fails.push("ring");
+                      if (!h.pinkyCurl) fails.push("pink");
+                      const status =
+                        fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
+                      const overlayHint = !overlayOn ? " (needs overlay)" : "";
+                      return [
+                        `Focus (left): ${status}${overlayHint} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
+                      ];
+                    })();
           const fistTrackingStatus = fistSeenRef.current !== null ? " TRACKING" : "";
           const logText = [
             `Hands detected: ${handsCount}`,
@@ -416,7 +442,7 @@ export default function HandOverlay({
             `Camera overlay: ${overlayOn ? "ACTIVE" : "off"}`,
             `Picture frame: ${rightHandPictureFrame ? "yes" : "no"}${!overlayOn ? " (needs overlay)" : ""}`,
             ...pfLines,
-            `Focus (left): ${leftHandFocus ? "YES" : "no"}${!overlayOn ? " (needs overlay)" : ""}${focusDebug ? ` (idx=${focusDebug.indexDist.toFixed(2)} thumb=${focusDebug.thumbDist.toFixed(2)} spread=${focusDebug.spread.toFixed(2)} mid=${focusDebug.middleDist.toFixed(2)} ring=${focusDebug.ringDist.toFixed(2)} pink=${focusDebug.pinkyDist.toFixed(2)})` : ""}`,
+            ...focusLines,
             "Camera: on",
           ].join("<br>");
           if (logText !== lastLogRef.current) {

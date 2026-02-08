@@ -197,6 +197,8 @@ export default function GeneratePage() {
 
   const focusImageRef = useRef<string | null>(null);
   focusImageRef.current = focusImage;
+  const focusLoadingRef = useRef(false);
+  focusLoadingRef.current = focusLoading;
 
   const onPictureFrame = useCallback(() => {
     const img = focusImageRef.current;
@@ -230,6 +232,8 @@ export default function GeneratePage() {
   }, []);
 
   const onFocus = useCallback(() => {
+    if (focusLoadingRef.current) return; // don't re-trigger while loading
+
     // Play focus sound
     try {
       if (!focusAudioRef.current) {
