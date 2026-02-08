@@ -164,27 +164,48 @@ const EquipmentSlotItem = ({
         <div className={`absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none ${
           tooltipSide === "left" ? "right-full mr-3" : "left-full ml-3"
         }`}>
-          <div className="bg-black/90 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-2 min-w-[140px] shadow-xl">
-            <p className="text-[#B0FBCD] font-semibold text-xs whitespace-nowrap">
-              {slot.name}
-            </p>
-            {slot.stats && (
-              <div className="mt-1.5 space-y-0.5">
-                {slot.stats.map((stat, idx) => (
-                  <div key={idx} className="flex justify-between gap-3 text-[10px]">
-                    <span className="text-white/50">{stat.label}</span>
-                    <span className="text-white/80">{stat.value}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="relative min-w-[140px]">
+            {/* Viewfinder corner marks */}
+            <div className="absolute -top-px -left-px w-2 h-2">
+              <div className="absolute top-0 left-0 w-full h-px bg-[#B0FBCD]/25" />
+              <div className="absolute top-0 left-0 h-full w-px bg-[#B0FBCD]/25" />
+            </div>
+            <div className="absolute -top-px -right-px w-2 h-2">
+              <div className="absolute top-0 right-0 w-full h-px bg-[#B0FBCD]/25" />
+              <div className="absolute top-0 right-0 h-full w-px bg-[#B0FBCD]/25" />
+            </div>
+            <div className="absolute -bottom-px -left-px w-2 h-2">
+              <div className="absolute bottom-0 left-0 w-full h-px bg-[#B0FBCD]/25" />
+              <div className="absolute bottom-0 left-0 h-full w-px bg-[#B0FBCD]/25" />
+            </div>
+            <div className="absolute -bottom-px -right-px w-2 h-2">
+              <div className="absolute bottom-0 right-0 w-full h-px bg-[#B0FBCD]/25" />
+              <div className="absolute bottom-0 right-0 h-full w-px bg-[#B0FBCD]/25" />
+            </div>
+
+            <div className="bg-[#050507]/90 backdrop-blur-md border border-white/[0.06] px-3 py-2.5">
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[#B0FBCD]/70 whitespace-nowrap" style={{ fontFamily: 'var(--font-geist-mono)' }}>
+                {slot.name}
+              </p>
+              {slot.stats && (
+                <div className="mt-1.5 space-y-1">
+                  {slot.stats.map((stat, idx) => (
+                    <div key={idx} className="flex justify-between gap-3 text-[10px]" style={{ fontFamily: 'var(--font-geist-mono)' }}>
+                      <span className="text-white/25 tracking-wider uppercase">{stat.label}</span>
+                      <span className="text-white/50">{stat.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          {/* Tooltip arrow */}
-          <div className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-black/90 border-white/20 ${
-            tooltipSide === "left" 
-              ? "right-0 translate-x-1 border-r border-t rotate-45" 
-              : "left-0 -translate-x-1 border-l border-b rotate-45"
-          }`} />
+
+          {/* Connecting line instead of arrow */}
+          <div className={`absolute top-1/2 h-px w-2 bg-[#B0FBCD]/15 ${
+            tooltipSide === "left"
+              ? "right-0 translate-x-full"
+              : "left-0 -translate-x-full"
+          }`} style={{ transform: `translateY(-0.5px) ${tooltipSide === "left" ? "translateX(100%)" : "translateX(-100%)"}` }} />
         </div>
       )}
     </div>
