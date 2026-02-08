@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Scroll-triggered reveal hook ─────────────────────────────
 function useReveal(threshold = 0.15) {
@@ -238,12 +240,18 @@ function AnimatedCounter({ end, suffix = "" }: { end: number; suffix?: string })
 }
 
 // ── Floating shutter button (hero CTA) ───────────────────────
-function ShutterButton() {
+function ShutterButton({ onNavigate }: { onNavigate: () => void }) {
   const [pressed, setPressed] = useState(false);
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setPressed(true);
+    onNavigate();
+  };
+
   return (
-    <Link
-      href="/create"
+    <button
+      onClick={handleClick}
       className="group relative flex items-center justify-center"
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
@@ -266,12 +274,12 @@ function ShutterButton() {
         }`}
         style={{ background: pressed ? "rgba(176,251,205,0.6)" : "rgba(176,251,205,0.85)" }}
       />
-    </Link>
+    </button>
   );
 }
 
 // ── Final CTA with reveal ────────────────────────────────────
-function CtaSection() {
+function CtaSection({ onNavigate }: { onNavigate: () => void }) {
   const { ref, visible } = useReveal(0.3);
   return (
     <div
@@ -309,9 +317,9 @@ function CtaSection() {
         and an AI that sees the world through your lens.
       </p>
 
-      <Link
-        href="/create"
-        className="group relative flex items-center gap-3 rounded-none px-8 py-3.5 transition-all duration-300 overflow-hidden"
+      <button
+        onClick={onNavigate}
+        className="group relative flex items-center gap-3 rounded-none px-8 py-3.5 transition-all duration-300 overflow-hidden cursor-pointer"
         style={{
           border: "1px solid rgba(176,251,205,0.15)",
           background: "rgba(176,251,205,0.04)",
@@ -348,15 +356,106 @@ function CtaSection() {
             strokeLinejoin="round"
           />
         </svg>
-      </Link>
+      </button>
     </div>
+  );
+}
+
+// ── Shutter transition overlay ───────────────────────────────
+function ShutterOverlay({ isTransitioning }: { isTransitioning: boolean }) {
+  return (
+    <AnimatePresence>
+      {isTransitioning && (
+        <>
+          {/* Left shutter blade */}
+          <motion.div
+            className="fixed inset-y-0 left-0 z-[100] bg-[#050507]"
+            initial={{ width: "0%" }}
+            animate={{ width: "50%" }}
+            transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
+          />
+          {/* Right shutter blade */}
+          <motion.div
+            className="fixed inset-y-0 right-0 z-[100] bg-[#050507]"
+            initial={{ width: "0%" }}
+            animate={{ width: "50%" }}
+            transition={{ duration: 0.5, ease: [0.76, 0, 0.24, 1] }}
+          />
+          {/* Center aperture ring */}
+          <motion.div
+            className="fixed inset-0 z-[101] flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <motion.div
+              className="relative"
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ duration: 0.4, delay: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
+            >
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                {/* Outer ring */}
+                <motion.circle
+                  cx="40"
+                  cy="40"
+                  r="38"
+                  stroke="rgba(176,251,205,0.4)"
+                  strokeWidth="1.5"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+                />
+                {/* Inner aperture */}
+                <motion.circle
+                  cx="40"
+                  cy="40"
+                  r="20"
+                  stroke="rgba(176,251,205,0.6)"
+                  strokeWidth="2"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.4, delay: 0.5, ease: "easeOut" }}
+                />
+                {/* Aperture blades */}
+                {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+                  <motion.line
+                    key={angle}
+                    x1="40"
+                    y1="40"
+                    x2={40 + 18 * Math.cos((angle * Math.PI) / 180)}
+                    y2={40 + 18 * Math.sin((angle * Math.PI) / 180)}
+                    stroke="rgba(176,251,205,0.3)"
+                    strokeWidth="1"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.3, delay: 0.55 + i * 0.05, ease: "easeOut" }}
+                  />
+                ))}
+              </svg>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
 // ── Main landing page ────────────────────────────────────────
 export default function LandingPage() {
+  const router = useRouter();
   const [scrollY, setScrollY] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handleNavigateToCreate = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      router.push("/create");
+    }, 700);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -368,7 +467,15 @@ export default function LandingPage() {
   const heroOpacity = Math.max(0, 1 - scrollY / 600);
 
   return (
-    <div className="relative min-h-screen bg-[#050507] text-white selection:bg-white/20">
+    <motion.div
+      className="relative min-h-screen bg-[#050507] text-white selection:bg-white/20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      {/* Shutter transition overlay */}
+      <ShutterOverlay isTransitioning={isTransitioning} />
+
       {/* Film grain overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-[60] opacity-[0.035]"
@@ -501,7 +608,7 @@ export default function LandingPage() {
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <ShutterButton />
+            <ShutterButton onNavigate={handleNavigateToCreate} />
           </div>
 
           {/* Label */}
@@ -719,7 +826,7 @@ export default function LandingPage() {
           }}
         />
 
-        <CtaSection />
+        <CtaSection onNavigate={handleNavigateToCreate} />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -760,6 +867,6 @@ export default function LandingPage() {
           </nav>
         </div>
       </footer>
-    </div>
+    </motion.div>
   );
 }
