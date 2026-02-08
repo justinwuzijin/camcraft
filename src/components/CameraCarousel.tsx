@@ -326,12 +326,14 @@ const InteractiveCameraModel = ({
   modelPath,
   isExploded,
   isA7 = false,
+  canExplode = false,
   initialRotation = [0, 0, 0],
   cameraId,
 }: {
   modelPath: string;
   isExploded: boolean;
   isA7?: boolean;
+  canExplode?: boolean;
   initialRotation?: [number, number, number];
   cameraId: string;
 }) => {
@@ -347,6 +349,9 @@ const InteractiveCameraModel = ({
   const isDragging = useRef(false);
   const previousMouse = useRef({ x: 0, y: 0 });
   const rotation = useRef({ x: initialRotation[0], y: initialRotation[1] });
+  
+  // Exploded view rotation for A7IV (sideways to show lens separation)
+  const explodedRotation = { x: 0.15, y: -1.1 };
 
   // Ensure full opacity on all materials (except hide Object_4002 for A7)
   useEffect(() => {
@@ -370,9 +375,9 @@ const InteractiveCameraModel = ({
     });
   }, [clonedScene, isA7]);
 
-  // Initialize explosion data
+  // Initialize explosion data (only for cameras that can explode)
   useEffect(() => {
-    if (initializedRef.current) return;
+    if (initializedRef.current || !canExplode) return;
     initializedRef.current = true;
 
     const data = new Map<string, { original: Vector3; displaced: Vector3 }>();
@@ -400,35 +405,14 @@ const InteractiveCameraModel = ({
           });
         }
       });
-    } else {
-      // Generic explosion for other cameras
-      const meshes: Object3D[] = [];
-      clonedScene.traverse((object: Object3D) => {
-        if ((object as any).isMesh) {
-          meshes.push(object);
-        }
-      });
-
-      const center = new Vector3();
-      meshes.forEach((mesh) => center.add(mesh.position));
-      center.divideScalar(meshes.length || 1);
-
-      meshes.forEach((mesh) => {
-        const originalPosition = mesh.position.clone();
-        const direction = originalPosition.clone().sub(center).normalize();
-        if (direction.length() === 0) {
-          direction.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-        }
-        const displaced = originalPosition.clone().add(direction.multiplyScalar(1.5));
-        data.set(mesh.uuid, { original: originalPosition.clone(), displaced });
-      });
     }
 
     explosionDataRef.current = data;
-  }, [clonedScene, isA7]);
+  }, [clonedScene, isA7, canExplode]);
 
-  // Animate explosion
+  // Animate explosion (only for cameras that can explode)
   useEffect(() => {
+    if (!canExplode) return;
     const animationData = explosionDataRef.current;
     if (!animationData || animationData.size === 0) return;
 
@@ -445,7 +429,27 @@ const InteractiveCameraModel = ({
         ease: "power2.inOut",
       });
     });
-  }, [isExploded, clonedScene]);
+  }, [isExploded, clonedScene, canExplode]);
+
+  // Animate rotation to sideways view when exploded (A7IV only)
+  useEffect(() => {
+    if (!canExplode || !groupRef.current) return;
+    
+    const targetRotation = isExploded ? explodedRotation : { x: initialRotation[0], y: initialRotation[1] };
+    
+    gsap.to(rotation.current, {
+      x: targetRotation.x,
+      y: targetRotation.y,
+      duration: 1.2,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        if (groupRef.current) {
+          groupRef.current.rotation.x = rotation.current.x;
+          groupRef.current.rotation.y = rotation.current.y;
+        }
+      },
+    });
+  }, [isExploded, canExplode, initialRotation]);
 
   // Add global mouse event listeners
   useEffect(() => {
@@ -500,8 +504,8 @@ const InteractiveCameraModel = ({
     >
       <primitive object={clonedScene} />
 
-      {/* Part labels - only visible when exploded */}
-      {isExploded && labels.map((label, index) => (
+      {/* Part labels - only visible when exploded and camera can explode */}
+      {isExploded && canExplode && labels.map((label, index) => (
         <Html
           key={index}
           position={label.position}
@@ -627,7 +631,7 @@ const CarouselScene = ({
           const isA7 = cam.id === "sony-a7iv";
           return (
             <group key={cam.id} position={cam.position} scale={[finalScale, finalScale, finalScale]}>
-              <InteractiveCameraModel modelPath={cam.modelPath} isExploded={isExploded} isA7={isA7} initialRotation={cam.initialRotation} cameraId={cam.id} />
+              <InteractiveCameraModel modelPath={cam.modelPath} isExploded={isExploded} isA7={isA7} canExplode={isA7} initialRotation={cam.initialRotation} cameraId={cam.id} />
             </group>
           );
         })}
@@ -656,30 +660,30 @@ const SpecsPanel = ({ cameraId, visible }: { cameraId: string; visible: boolean 
 
   return (
     <div
-      className={`absolute left-10 top-1/2 -translate-y-1/2 w-[360px] bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6 transition-all duration-500 ${
+      className={`absolute left-24 top-1/2 -translate-y-1/2 w-[420px] bg-[#0a0a0c]/90 backdrop-blur-xl border border-white/[0.06] rounded-xl p-8 transition-all duration-500 ${
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8 pointer-events-none"
       }`}
     >
       <div
-        className="text-[10px] tracking-[0.25em] uppercase text-white/25 mb-5"
+        className="text-xs tracking-[0.25em] uppercase text-white/25 mb-6"
         style={{ fontFamily: "var(--font-geist-mono)" }}
       >
         Specifications
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {specRows.map((row, i) => (
           <div key={row.label}>
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-xs text-white/30 shrink-0">{row.label}</span>
+            <div className="flex items-baseline justify-between gap-6">
+              <span className="text-sm text-white/30 shrink-0">{row.label}</span>
               <span
-                className="text-sm text-white/75 text-right"
+                className="text-base text-white/75 text-right"
                 style={row.mono ? { fontFamily: "var(--font-geist-mono)" } : undefined}
               >
                 {row.value}
               </span>
             </div>
-            {i === 1 && <div className="h-px bg-white/[0.06] mt-3" />}
+            {i === 1 && <div className="h-px bg-white/[0.06] mt-4" />}
           </div>
         ))}
       </div>
