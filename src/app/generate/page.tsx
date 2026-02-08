@@ -339,14 +339,6 @@ export default function GeneratePage() {
             {resolvedParams.crowd && <div><span className="text-white/40">Crowd:</span> {resolvedParams.crowd}</div>}
           </div>
         )}
-
-        {/* Regenerate button */}
-        <button
-          onClick={() => setShowViewer(false)}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-6 py-2.5 text-sm text-white/80 hover:bg-black/80 transition-all"
-        >
-          Generate Another
-        </button>
       </div>
     );
   }
