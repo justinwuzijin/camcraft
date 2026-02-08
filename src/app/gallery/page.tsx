@@ -203,6 +203,26 @@ export default function GalleryPage() {
                 className="relative h-7 w-7 object-contain drop-shadow-[0_0_10px_rgba(176,251,205,0.15)]"
               />
             </Link>
+            <Link
+              href="/create"
+              className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M10 12L6 8L10 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span
+                className="text-xs tracking-wider"
+                style={{ fontFamily: "var(--font-geist-mono)" }}
+              >
+                Back
+              </span>
+            </Link>
             <div className="h-4 w-px bg-white/[0.08]" />
             <h1
               className="text-sm tracking-[0.25em] uppercase text-white/70"

@@ -174,7 +174,7 @@ const CAMERA_EQUIPMENT: Record<string, CameraLoadout> = {
 // Part labels for exploded view - each camera has labels that track with 3D rotation
 const PART_LABELS: Record<string, { name: string; fact: string; position: [number, number, number] }[]> = {
   "sony-a7iv": [
-    { name: "Lens Hood", fact: "Reduces lens flare and protects the front element", position: [-0.8, 0.6, 8] },
+    { name: "Lens Hood", fact: "Reduces lens flare and protects the front element", position: [-0.3, 0.4, 5] },
     { name: "Lens Barrel", fact: "Houses 18 elements in 14 groups for sharp optics", position: [0.3, -0.4, 2] },
     { name: "Camera Body", fact: "33MP full-frame sensor with 5-axis stabilization", position: [1.5, 0.5, -1] },
   ],
@@ -351,7 +351,7 @@ const InteractiveCameraModel = ({
   const rotation = useRef({ x: initialRotation[0], y: initialRotation[1] });
   
   // Exploded view rotation for A7IV (sideways to show lens separation)
-  const explodedRotation = { x: 0.15, y: -1.1 };
+  const explodedRotation = { x: 0.1, y: -1.4 };
 
   // Ensure full opacity on all materials (except hide Object_4002 for A7)
   useEffect(() => {
@@ -574,9 +574,9 @@ const CarouselScene = ({
     let x = Math.sin(angle) * radiusX;
     let z = Math.cos(angle) * radiusZ + centerZ;
 
-    // When exploded, move active camera to the right and make it bigger
+    // When exploded, move active camera to center-right and slightly down
     if (exploded && relativePos === 0) {
-      x = 4; // Move more to the right to accommodate larger size
+      x = 2.5; // Move to center-right, aligned better with specs panel
       z = centerZ + 1; // Move slightly forward
     }
 
@@ -596,7 +596,7 @@ const CarouselScene = ({
       opacity = 0.4;
     }
 
-    const y = exploded && relativePos === 0 ? 0 : depthFactor * 0.5 - 0.3;
+    const y = exploded && relativePos === 0 ? -0.2 : depthFactor * 0.5 - 0.3;
 
     return { position: [x, y, z] as [number, number, number], scale, opacity, depthFactor };
   };
@@ -850,7 +850,7 @@ export const CameraCarousel = () => {
       {/* Camera name overlay (always visible, repositioned when exploded) */}
       <div className={`absolute pointer-events-none transition-all duration-500 ${
         isExploded
-          ? "top-6 right-6 text-right"
+          ? "top-24 right-6 text-right"
           : "top-20 left-1/2 -translate-x-1/2 text-center"
       }`}>
         <div
