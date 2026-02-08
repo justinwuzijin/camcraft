@@ -153,6 +153,13 @@ function ChipSelector({
 }
 
 const SHUTTER_SOUND = "/sony_shutter.mp3";
+const FOCUS_SOUND = "/focus.mp3";
+
+// Viewfinder screen area as fractions of the camera overlay image
+const VF_LEFT = 0.2;
+const VF_TOP = 0.37;
+const VF_WIDTH = 0.4;
+const VF_HEIGHT = 0.5;
 
 // ── Main page ─────────────────────────────────────────────────
 export default function GeneratePage() {
@@ -177,37 +184,111 @@ export default function GeneratePage() {
     deltaAzimuth: 0,
     deltaPolar: 0,
   });
+  const captureRef = useRef<(() => string | null) | null>(null);
   const shutterAudioRef = useRef<HTMLAudioElement | null>(null);
+  const focusAudioRef = useRef<HTMLAudioElement | null>(null);
   const [flash, setFlash] = useState(false);
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false);
+  const [focusLoading, setFocusLoading] = useState(false);
+  const [focusImage, setFocusImage] = useState<string | null>(null);
 
-  // Preload shutter audio once on mount
-  useEffect(() => {
-    const audio = new Audio(SHUTTER_SOUND);
-    audio.preload = "auto";
-    shutterAudioRef.current = audio;
-    return () => {
-      audio.pause();
-      shutterAudioRef.current = null;
-    };
-  }, []);
+  const focusImageRef = useRef<string | null>(null);
+  focusImageRef.current = focusImage;
 
   const onPictureFrame = useCallback(() => {
+    const img = focusImageRef.current;
+    if (!img) return; // only save when focused
+
     setFlash(true);
     try {
-      const src = shutterAudioRef.current;
-      if (src) {
-        // Clone avoids "removed from document" errors from overlapping play() calls
-        const clone = src.cloneNode() as HTMLAudioElement;
-        clone.play().catch(() => {});
+      if (!shutterAudioRef.current) {
+        shutterAudioRef.current = new Audio(SHUTTER_SOUND);
       }
+      const audio = shutterAudioRef.current;
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
     } catch {
       // ignore if audio fails
     }
+
+    // Save the focused image
+    const a = document.createElement("a");
+    a.href = img;
+    a.download = `focus_${Date.now()}.jpg`;
+    a.click();
+
+    // Clear the focus image after saving
+    setFocusImage(null);
   }, []);
 
   const onFistOpen = useCallback(() => {
     setCameraOverlayActive((prev) => !prev);
+  }, []);
+
+  const onFocus = useCallback(() => {
+    // Play focus sound
+    try {
+      if (!focusAudioRef.current) {
+        focusAudioRef.current = new Audio(FOCUS_SOUND);
+      }
+      const audio = focusAudioRef.current;
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    } catch {
+      // ignore
+    }
+
+    // Capture the canvas
+    const dataUrl = captureRef.current?.();
+    if (!dataUrl) return;
+
+    // Crop to viewfinder region using an offscreen canvas
+    const img = new Image();
+    img.onload = async () => {
+      const cropX = Math.round(img.width * VF_LEFT);
+      const cropY = Math.round(img.height * VF_TOP);
+      const cropW = Math.round(img.width * VF_WIDTH);
+      const cropH = Math.round(img.height * VF_HEIGHT);
+
+      const offscreen = document.createElement("canvas");
+      offscreen.width = cropW;
+      offscreen.height = cropH;
+      const ctx = offscreen.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      const croppedDataUrl = offscreen.toDataURL("image/jpeg", 0.9);
+      const base64 = croppedDataUrl.split(",")[1];
+
+      setFocusLoading(true);
+      setFocusImage(null);
+
+      try {
+        const res = await fetch("/api/focus-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64, mimeType: "image/jpeg" }),
+        });
+
+        if (!res.ok) {
+          console.error("Focus API error:", res.status);
+          setFocusLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.image && data.mimeType) {
+          setFocusImage(`data:${data.mimeType};base64,${data.image}`);
+        }
+      } catch (err) {
+        console.error("Focus request failed:", err);
+      } finally {
+        setFocusLoading(false);
+      }
+    };
+    img.src = dataUrl;
   }, []);
 
   useEffect(() => {
@@ -275,22 +356,56 @@ export default function GeneratePage() {
   if (showViewer && panoUrl) {
     return (
       <div className="relative w-full min-h-screen bg-black">
-        <PanoViewer key={panoUrl} panoUrl={panoUrl} gestureDeltaRef={gestureDeltaRef} />
+        <PanoViewer key={panoUrl} panoUrl={panoUrl} gestureDeltaRef={gestureDeltaRef} captureRef={captureRef} />
 
         {/* Big camera overlay — toggled by fist→open gesture */}
         <div
           className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center transition-all duration-500 ${
             cameraOverlayActive ? "scale-100 opacity-100" : "scale-90 opacity-0"
           }`}
-          aria-hidden
+          aria-hidden={!cameraOverlayActive}
         >
           <div className="relative">
+            {/* Flash effect in viewfinder screen */}
             {flash && (
               <div
                 className="absolute bg-white/80"
-                style={{ left: "20%", top: "37%", width: "40%", height: "50%" }}
+                style={{
+                  left: `${VF_LEFT * 100}%`,
+                  top: `${VF_TOP * 100}%`,
+                  width: `${VF_WIDTH * 100}%`,
+                  height: `${VF_HEIGHT * 100}%`,
+                }}
                 aria-hidden
               />
+            )}
+            {/* Focus loading / result in viewfinder screen */}
+            {(focusLoading || focusImage) && (
+              <div
+                className="absolute overflow-hidden"
+                style={{
+                  left: `${VF_LEFT * 100}%`,
+                  top: `${VF_TOP * 100}%`,
+                  width: `${VF_WIDTH * 100}%`,
+                  height: `${VF_HEIGHT * 100}%`,
+                }}
+              >
+                {focusLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span className="text-xs text-white/80">Focusing...</span>
+                    </div>
+                  </div>
+                )}
+                {focusImage && !focusLoading && (
+                  <img
+                    src={focusImage}
+                    alt="Focused shot"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                )}
+              </div>
             )}
             <img
               src="/camera_pov.png"
@@ -305,6 +420,7 @@ export default function GeneratePage() {
           gestureDeltaRef={gestureDeltaRef}
           onPictureFrame={onPictureFrame}
           onFistOpen={onFistOpen}
+          onFocus={onFocus}
           cameraOverlayActive={cameraOverlayActive}
         />
 
