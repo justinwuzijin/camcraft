@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
 interface GestureTutorialProps {
@@ -164,17 +164,64 @@ const AnimatedHand = ({
   }
 };
 
+// Video player component for gesture demonstrations
+const GestureVideo = ({
+  videoSrc,
+  isActive,
+  fallbackGesture,
+}: {
+  videoSrc: string;
+  isActive: boolean;
+  fallbackGesture: "pinch" | "frame" | "fist-open";
+}) => {
+  const [hasError, setHasError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isActive) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    }
+  }, [isActive]);
+
+  if (hasError) {
+    return <AnimatedHand gesture={fallbackGesture} isActive={isActive} />;
+  }
+
+  return (
+    <div className="relative w-28 h-28 flex items-center justify-center overflow-hidden rounded-lg">
+      <video
+        ref={videoRef}
+        src={videoSrc}
+        loop
+        muted
+        playsInline
+        className={`w-full h-full object-cover transition-opacity duration-300 ${
+          isActive ? "opacity-100" : "opacity-60"
+        }`}
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+};
+
 // Gesture card with instructions
 const GestureCard = ({
   gesture,
   title,
   instructions,
   isActive,
+  videoSrc,
 }: {
   gesture: "pinch" | "frame" | "fist-open";
   title: string;
   instructions: string[];
   isActive: boolean;
+  videoSrc?: string;
 }) => {
   return (
     <div className={`flex flex-col items-center p-5 rounded-2xl border transition-all duration-300 min-w-[180px] max-w-[200px] ${
@@ -183,7 +230,11 @@ const GestureCard = ({
         : "bg-white/5 border-white/10 opacity-50"
     }`}>
       <div className="mb-4">
-        <AnimatedHand gesture={gesture} isActive={isActive} />
+        {videoSrc ? (
+          <GestureVideo videoSrc={videoSrc} isActive={isActive} fallbackGesture={gesture} />
+        ) : (
+          <AnimatedHand gesture={gesture} isActive={isActive} />
+        )}
       </div>
       <h3 className={`text-base font-bold mb-2 transition-colors ${
         isActive ? "text-[#B0FBCD]" : "text-white"
@@ -216,15 +267,7 @@ export default function GestureTutorial({ onComplete, isVisible }: GestureTutori
         "2. Hold the pinch",
         "3. Drag to look around",
       ],
-    },
-    {
-      gesture: "frame" as const,
-      title: "Take Photo",
-      instructions: [
-        "1. Extend thumb & index finger",
-        "2. Form an L-shape",
-        "3. Hold for 0.5 seconds",
-      ],
+      videoSrc: "/gestures/pinch.mp4",
     },
     {
       gesture: "fist-open" as const,
@@ -234,6 +277,17 @@ export default function GestureTutorial({ onComplete, isVisible }: GestureTutori
         "2. Open your hand fully",
         "3. Camera view toggles",
       ],
+      videoSrc: "/gestures/toggle.mp4",
+    },
+    {
+      gesture: "frame" as const,
+      title: "Take Photo",
+      instructions: [
+        "1. Extend thumb & index finger",
+        "2. Form an L-shape",
+        "3. Hold for 0.5 seconds",
+      ],
+      videoSrc: "/gestures/photo.mp4",
     },
   ];
 
@@ -305,6 +359,7 @@ export default function GestureTutorial({ onComplete, isVisible }: GestureTutori
               title={g.title}
               instructions={g.instructions}
               isActive={activeGesture === index}
+              videoSrc={g.videoSrc}
             />
           ))}
         </div>
