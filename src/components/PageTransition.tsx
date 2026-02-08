@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 
@@ -10,7 +10,7 @@ interface PageTransitionProps {
 }
 
 // Shutter-style transition variants
-const shutterVariants = {
+const shutterVariants: Variants = {
   initial: {
     clipPath: "inset(0 50% 0 50%)",
     opacity: 0,
@@ -46,7 +46,7 @@ const shutterVariants = {
 };
 
 // Fade + scale variants for smoother feel
-const fadeScaleVariants = {
+const fadeScaleVariants: Variants = {
   initial: {
     opacity: 0,
     scale: 0.98,
