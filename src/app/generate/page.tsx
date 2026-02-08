@@ -2,9 +2,12 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import CityAutocomplete from "./CityAutocomplete";
 import HandOverlay from "@/app/pano/HandOverlay";
 import GestureTutorial from "@/components/GestureTutorial";
+import { addGalleryEntry } from "@/lib/galleryStore";
+import type { GalleryEntry } from "@/lib/galleryStore";
 
 const PanoViewer = dynamic(() => import("@/app/pano/PanoViewer"), {
   ssr: false,
@@ -194,6 +197,8 @@ export default function GeneratePage() {
   const [cameraOverlayActive, setCameraOverlayActive] = useState(false);
   const [focusLoading, setFocusLoading] = useState(false);
   const [focusImage, setFocusImage] = useState<string | null>(null);
+  // Base64 data of the focused image (kept in memory until captured)
+  const focusBase64Ref = useRef<{ data: string; mimeType: string } | null>(null);
 
   const focusImageRef = useRef<string | null>(null);
   focusImageRef.current = focusImage;
@@ -202,7 +207,8 @@ export default function GeneratePage() {
 
   const onPictureFrame = useCallback(() => {
     const img = focusImageRef.current;
-    if (!img) return; // only save when focused
+    const base64 = focusBase64Ref.current;
+    if (!img || !base64) return; // only save when focused
 
     setFlash(true);
     try {
@@ -217,15 +223,65 @@ export default function GeneratePage() {
       // ignore if audio fails
     }
 
-    // Save the focused image
+    // Download the focused image locally
     const a = document.createElement("a");
     a.href = img;
     a.download = `focus_${Date.now()}.jpg`;
     a.click();
 
-    // Clear the focus image after saving
+    // Save to server + gallery store
+    const sceneData = {
+      location: resolvedParams?.location,
+      timeOfDay: resolvedParams?.timeOfDay,
+      decade: resolvedParams?.decade,
+      placeType: resolvedParams?.placeType,
+      weather: resolvedParams?.weather,
+      crowd: resolvedParams?.crowd,
+    };
+
+    fetch("/api/save-photo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: base64.data,
+        mimeType: base64.mimeType,
+        scene: sceneData,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.savedPath) {
+          const entry: GalleryEntry = {
+            id: `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            imagePath: data.savedPath,
+            panoPath: null,
+            capturedAt: Date.now(),
+            scene: {
+              location: sceneData.location,
+              timeOfDay: sceneData.timeOfDay,
+              era: sceneData.decade,
+              setting: sceneData.placeType,
+              weather: sceneData.weather,
+              crowd: sceneData.crowd,
+            },
+            camera: {
+              body: "Sony α7 IV",
+              lens: "FE 24-70mm f/2.8 GM",
+              focalLength: "24-70mm",
+              iso: "100-51200",
+              sensor: "35mm Full-Frame BSI",
+              resolution: "33 Megapixels",
+            },
+          };
+          addGalleryEntry(entry);
+        }
+      })
+      .catch((err) => console.error("Failed to save photo:", err));
+
+    // Clear the focus image after capturing
     setFocusImage(null);
-  }, []);
+    focusBase64Ref.current = null;
+  }, [resolvedParams]);
 
   const onFistOpen = useCallback(() => {
     setCameraOverlayActive((prev) => !prev);
@@ -276,7 +332,11 @@ export default function GeneratePage() {
         const res = await fetch("/api/focus-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64, mimeType: "image/jpeg" }),
+          body: JSON.stringify({
+            image: base64,
+            mimeType: "image/jpeg",
+            scene: resolvedParams || {},
+          }),
         });
 
         if (!res.ok) {
@@ -288,6 +348,7 @@ export default function GeneratePage() {
         const data = await res.json();
         if (data.image && data.mimeType) {
           setFocusImage(`data:${data.mimeType};base64,${data.image}`);
+          focusBase64Ref.current = { data: data.image, mimeType: data.mimeType };
         }
       } catch (err) {
         console.error("Focus request failed:", err);
@@ -296,7 +357,7 @@ export default function GeneratePage() {
       }
     };
     img.src = dataUrl;
-  }, []);
+  }, [resolvedParams]);
 
   useEffect(() => {
     if (!flash) return;
@@ -468,6 +529,20 @@ export default function GeneratePage() {
           </svg>
           Back
         </button>
+
+        {/* Gallery button */}
+        <Link
+          href="/gallery"
+          className="absolute top-5 left-[120px] z-30 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-black/80 transition-all"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
+            <rect x="1" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+            <rect x="7" y="3" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+            <rect x="1" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+            <rect x="7" y="9" width="5" height="5" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+          </svg>
+          Gallery
+        </Link>
 
         {/* Scene info panel */}
         {resolvedParams && Object.keys(resolvedParams).length > 0 && (

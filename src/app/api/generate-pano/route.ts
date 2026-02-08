@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
+function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 30);
+}
+
 function buildPrompt(params: Record<string, string>): string {
   const base =
     "Create an equirectangular image with a perfect seam connection (for viewing in 360). Make it as realistic and natural as possible - like a real Street View Photo.";
@@ -97,23 +105,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // Save image to public/generated/
+    // Build a descriptive filename from resolved params
+    const slugParts: string[] = [];
+    if (resolved.location) slugParts.push(slugify(resolved.location));
+    if (resolved.timeOfDay) slugParts.push(slugify(resolved.timeOfDay));
+    if (resolved.decade) slugParts.push(slugify(resolved.decade));
+    if (resolved.placeType) slugParts.push(slugify(resolved.placeType));
+    if (resolved.weather) slugParts.push(slugify(resolved.weather));
+    const slug = slugParts.length > 0 ? slugParts.join("-") : "scene";
+
     const ext = imagePart.inlineData.mimeType === "image/png" ? "png" : "jpg";
-    const filename = `pano_${Date.now()}.${ext}`;
-    const dir = path.join(process.cwd(), "public", "generated");
+    const filename = `${slug}-${Date.now()}.${ext}`;
+    const dir = path.join(process.cwd(), "public", "generated", "panos");
     await mkdir(dir, { recursive: true });
     await writeFile(
       path.join(dir, filename),
       Buffer.from(imagePart.inlineData.data, "base64")
     );
-    console.log(`Saved generated image: public/generated/${filename}`);
+    console.log(`Saved panorama: public/generated/panos/${filename}`);
 
     return NextResponse.json({
       image: imagePart.inlineData.data,
       mimeType: imagePart.inlineData.mimeType,
       prompt,
       parameters: resolved,
-      savedPath: `/generated/${filename}`,
+      savedPath: `/generated/panos/${filename}`,
     });
   } catch (e) {
     console.error("Gemini request failed:", e);

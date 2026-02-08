@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 
 export async function POST(req: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -11,7 +9,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { image: string; mimeType?: string };
+  let body: { image: string; mimeType?: string; scene?: Record<string, string> };
   try {
     body = await req.json();
   } catch {
@@ -92,21 +90,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const ext =
-      imagePart.inlineData.mimeType === "image/png" ? "png" : "jpg";
-    const filename = `focus_${Date.now()}.${ext}`;
-    const dir = path.join(process.cwd(), "public", "generated");
-    await mkdir(dir, { recursive: true });
-    await writeFile(
-      path.join(dir, filename),
-      Buffer.from(imagePart.inlineData.data, "base64")
-    );
-    console.log(`Saved focus image: public/generated/${filename}`);
-
+    // Return enhanced image data only — saving to disk happens in /api/save-photo
     return NextResponse.json({
       image: imagePart.inlineData.data,
       mimeType: imagePart.inlineData.mimeType,
-      savedPath: `/generated/${filename}`,
     });
   } catch (e) {
     console.error("Gemini focus request failed:", e);
