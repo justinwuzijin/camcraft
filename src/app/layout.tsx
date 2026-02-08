@@ -13,9 +13,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "CamCraft",
   description: "Golden Age of Photography",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+  openGraph: {
+    title: "CamCraft",
+    description: "Golden Age of Photography",
+    images: ["/landing_page.jpeg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CamCraft",
+    description: "Golden Age of Photography",
+    images: ["/landing_page.jpeg"],
+  },
 };
 
 export default function RootLayout({
