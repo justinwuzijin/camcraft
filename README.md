@@ -240,28 +240,6 @@ const response = await fetch("gemini-3-pro-image-preview:generateContent", {
 
 **Use case**: Onboarding — users see exactly how to pinch, frame, and focus before entering the viewer.
 
----
-
-## Challenges We Overcame
-
-1. **Gesture false positives** — Early detection triggered accidentally. We added cooldown timers, hold-duration requirements, and movement dead zones until the interface felt as deliberate as a physical camera shutter.
-
-2. **Panorama seams** — AI-generated panoramas had visible seams where edges met. We refined prompts to explicitly request "equirectangular with perfect seam connection" and Street View-quality realism.
-
-3. **Focus realism** — The AI-enhanced "focus" feature initially looked like AI art, not camera output. We tuned prompts to specify lens characteristics (85mm, f/1.4), bokeh quality, and professional photography aesthetics.
-
-4. **60fps performance** — Running MediaPipe + Three.js + React simultaneously pushed browser limits. We used refs instead of state for gesture data and chose vanilla Three.js over R3F for the panorama renderer.
-
----
-
-## What's Next
-
-- **More cameras** — Expand the library with film cameras, medium format, and vintage gear
-- **Lens simulation** — Let users swap lenses and see how focal length and aperture affect the scene
-- **Camera-specific rendering** — Simulate each camera's unique color science, dynamic range, and noise characteristics
-- **Collaborative scouting** — Share generated locations with clients or team members
-- **Mobile support** — Touch-based controls for scouting on the go
-- **Export to Lightroom** — Generate mock RAW files with metadata matching the simulated camera
 
 ---
 
