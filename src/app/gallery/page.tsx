@@ -208,7 +208,7 @@ export default function GalleryPage() {
               className="text-sm tracking-[0.25em] uppercase text-white/70"
               style={{ fontFamily: "var(--font-geist-mono)" }}
             >
-              Contact Sheet
+              Gallery
             </h1>
           </div>
 
@@ -275,7 +275,7 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            {/* Contact sheet grid */}
+            {/* Gallery grid */}
             <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1">
               {items.map((item, idx) => (
                 <button

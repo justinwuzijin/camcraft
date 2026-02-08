@@ -751,7 +751,7 @@ export default function LandingPage() {
                 </svg>
               }
               title="Contact Sheet"
-              description="Your captures are saved to a gallery contact sheet. Download, review metadata, or reshoot."
+              description="Your captures are saved to a gallery. Download, review metadata, or reshoot."
             />
             <FeatureCard
               index={5}

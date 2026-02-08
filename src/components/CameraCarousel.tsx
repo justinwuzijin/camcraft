@@ -517,9 +517,29 @@ const InteractiveCameraModel = ({
             pointerEvents: 'none',
           }}
         >
-          <div className="bg-black/80 backdrop-blur-sm border border-[#B0FBCD]/40 rounded-lg px-3 py-2 min-w-[120px] max-w-[180px] shadow-lg">
-            <p className="text-[#B0FBCD] font-semibold text-xs whitespace-nowrap">{label.name}</p>
-            <p className="text-white/60 text-[10px] mt-1 leading-tight">{label.fact}</p>
+          <div className="relative min-w-[130px] max-w-[180px]">
+            {/* Viewfinder corner marks */}
+            <div className="absolute -top-px -left-px w-2.5 h-2.5">
+              <div className="absolute top-0 left-0 w-full h-px bg-[#B0FBCD]/30" />
+              <div className="absolute top-0 left-0 h-full w-px bg-[#B0FBCD]/30" />
+            </div>
+            <div className="absolute -top-px -right-px w-2.5 h-2.5">
+              <div className="absolute top-0 right-0 w-full h-px bg-[#B0FBCD]/30" />
+              <div className="absolute top-0 right-0 h-full w-px bg-[#B0FBCD]/30" />
+            </div>
+            <div className="absolute -bottom-px -left-px w-2.5 h-2.5">
+              <div className="absolute bottom-0 left-0 w-full h-px bg-[#B0FBCD]/30" />
+              <div className="absolute bottom-0 left-0 h-full w-px bg-[#B0FBCD]/30" />
+            </div>
+            <div className="absolute -bottom-px -right-px w-2.5 h-2.5">
+              <div className="absolute bottom-0 right-0 w-full h-px bg-[#B0FBCD]/30" />
+              <div className="absolute bottom-0 right-0 h-full w-px bg-[#B0FBCD]/30" />
+            </div>
+
+            <div className="bg-[#050507]/90 backdrop-blur-md border border-white/[0.06] px-3 py-2.5">
+              <p className="text-[11px] tracking-[0.15em] uppercase text-[#B0FBCD]/70" style={{ fontFamily: 'var(--font-geist-mono)' }}>{label.name}</p>
+              <p className="text-[10px] leading-relaxed text-white/30 mt-1" style={{ fontFamily: 'var(--font-geist-mono)' }}>{label.fact}</p>
+            </div>
           </div>
         </Html>
       ))}

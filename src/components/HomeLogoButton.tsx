@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 // Pages that embed the logo directly in their own headers
-const HEADER_PAGES = ["/generate", "/gallery"];
+const HEADER_PAGES = ["/create", "/generate", "/gallery"];
 
 export default function HomeLogoButton() {
   const pathname = usePathname();

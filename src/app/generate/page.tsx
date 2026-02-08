@@ -883,9 +883,9 @@ export default function GeneratePage() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
+        <div className="relative mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
           <div className="flex items-center gap-4">
-            <Link href="/" aria-label="Home" className="relative shrink-0">
+            <Link href="/" aria-label="Home" className="relative -ml-6 shrink-0 pl-6 sm:-ml-10 sm:pl-10">
               <div
                 className="absolute inset-0 blur-lg opacity-25 rounded-full"
                 style={{ background: "rgba(176,251,205,0.4)", transform: "scale(1.6)" }}
@@ -899,14 +899,14 @@ export default function GeneratePage() {
               />
             </Link>
             <div className="h-4 w-px bg-white/[0.08]" />
-            <h1
-              className="text-sm tracking-[0.25em] uppercase text-white/70"
-              style={{ fontFamily: "var(--font-geist-mono)" }}
-            >
-              Generate
-            </h1>
+            <NavButton href="/create" icon="back" label="Back" variant="header" />
           </div>
-
+          <h1
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-sm tracking-[0.25em] uppercase text-white/70"
+            style={{ fontFamily: "var(--font-geist-mono)" }}
+          >
+            Generate
+          </h1>
           <NavButton href="/gallery" icon="gallery" label="Gallery" variant="header" badgeCount={badgeCount} />
         </div>
       </header>
