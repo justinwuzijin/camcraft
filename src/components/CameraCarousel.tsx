@@ -6,6 +6,12 @@ import { Environment, useGLTF, Html } from "@react-three/drei";
 import { Vector3, Object3D, Group } from "three";
 import gsap from "gsap";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const CameraEquipmentHUD = dynamic(
+  () => import("@/components/CameraEquipmentHUD"),
+  { ssr: false }
+);
 
 // Camera specs data for the exploded view panel
 const CAMERA_SPECS: Record<string, { body: string; lens: string; focalLength: string; iso: string; sensor: string; resolution: string }> = {
@@ -40,6 +46,128 @@ const CAMERA_SPECS: Record<string, { body: string; lens: string; focalLength: st
     iso: "100-51200",
     sensor: "35mm Full-Frame BSI",
     resolution: "33 Megapixels",
+  },
+};
+
+// Equipment loadouts for each camera (for the Minecraft-style HUD)
+import type { CameraLoadout } from "@/components/CameraEquipmentHUD";
+
+const CAMERA_EQUIPMENT: Record<string, CameraLoadout> = {
+  "sony-handycam": {
+    body: {
+      id: "sony-handycam",
+      name: "Sony DCR-TRV900",
+      icon: null,
+      modelPath: "/sony_handycam_scan_4k8k.glb",
+      equipped: true,
+      stats: [
+        { label: "Sensor", value: '1/3" 3-CCD' },
+        { label: "Resolution", value: "530 lines" },
+      ],
+    },
+    lens: {
+      id: "zeiss-vario",
+      name: "Carl Zeiss Vario-Sonnar",
+      icon: null,
+      modelPath: "/sony_handycam_scan_4k8k.glb",
+      equipped: true,
+      stats: [
+        { label: "Focal", value: "4.3-43mm" },
+        { label: "Zoom", value: "10x Optical" },
+      ],
+    },
+    accessory1: {
+      id: "tape",
+      name: "MiniDV Tape",
+      icon: null,
+      equipped: true,
+      stats: [{ label: "Duration", value: "60 min" }],
+    },
+    accessory2: { id: "none", name: "Empty Slot", icon: null, equipped: false },
+  },
+  "digital-camera": {
+    body: {
+      id: "digital-camera",
+      name: "Compact Digital",
+      icon: null,
+      modelPath: "/digital_camera.glb",
+      equipped: true,
+      stats: [
+        { label: "Sensor", value: '1/2.3" CCD' },
+        { label: "Resolution", value: "5 MP" },
+      ],
+    },
+    lens: {
+      id: "builtin",
+      name: "Built-in Zoom",
+      icon: null,
+      modelPath: "/digital_camera.glb",
+      equipped: true,
+      stats: [
+        { label: "Focal", value: "35-105mm" },
+        { label: "Zoom", value: "3x" },
+      ],
+    },
+    accessory1: {
+      id: "flash",
+      name: "Built-in Flash",
+      icon: null,
+      equipped: true,
+      stats: [{ label: "Range", value: "3m" }],
+    },
+    accessory2: { id: "none", name: "Empty Slot", icon: null, equipped: false },
+  },
+  "fujifilm-xt2": {
+    body: {
+      id: "fujifilm-xt2",
+      name: "Fujifilm X-T2",
+      icon: null,
+      modelPath: "/fujifilm_x-t2_camera.glb",
+      equipped: true,
+      stats: [
+        { label: "Sensor", value: "24.3MP APS-C" },
+        { label: "ISO", value: "200-12800" },
+      ],
+    },
+    lens: {
+      id: "xf-18-55",
+      name: "XF 18-55mm f/2.8-4",
+      icon: null,
+      modelPath: "/fujifilm_x-t2_camera.glb",
+      equipped: true,
+      stats: [
+        { label: "Focal", value: "18-55mm" },
+        { label: "Aperture", value: "f/2.8-4" },
+      ],
+    },
+    accessory1: { id: "none", name: "Empty Slot", icon: null, equipped: false },
+    accessory2: { id: "none", name: "Empty Slot", icon: null, equipped: false },
+  },
+  "sony-a7iv": {
+    body: {
+      id: "sony-a7iv",
+      name: "Sony α7 IV",
+      icon: null,
+      modelPath: "/a7iv.glb",
+      equipped: true,
+      stats: [
+        { label: "Sensor", value: "33MP FF" },
+        { label: "ISO", value: "100-51200" },
+      ],
+    },
+    lens: {
+      id: "fe-24-70",
+      name: "FE 24-70mm f/2.8 GM",
+      icon: null,
+      modelPath: "/a7iv.glb",
+      equipped: true,
+      stats: [
+        { label: "Focal", value: "24-70mm" },
+        { label: "Aperture", value: "f/2.8" },
+      ],
+    },
+    accessory1: { id: "none", name: "Empty Slot", icon: null, equipped: false },
+    accessory2: { id: "none", name: "Empty Slot", icon: null, equipped: false },
   },
 };
 
@@ -683,6 +811,17 @@ export const CameraCarousel = () => {
         </h1>
         <p className="text-white/50 text-sm mt-1">{currentCamera.description}</p>
       </div>
+
+      {/* Camera Equipment HUD - Minecraft-style (visible when exploded) */}
+      {isExploded && (
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 transition-all duration-500 animate-in fade-in slide-in-from-right-4">
+          <CameraEquipmentHUD
+            loadout={CAMERA_EQUIPMENT[currentCamera.id]}
+            position="right"
+            className="!relative !translate-y-0 !right-0 !left-0"
+          />
+        </div>
+      )}
 
       {/* Navigation arrows (hide when exploded) - just arrows, no background */}
       {!isExploded && (

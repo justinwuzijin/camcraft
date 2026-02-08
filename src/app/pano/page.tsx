@@ -13,6 +13,11 @@ const PanoViewer = dynamic(() => import("./PanoViewer"), {
   ),
 });
 
+const CameraEquipmentHUD = dynamic(
+  () => import("@/components/CameraEquipmentHUD"),
+  { ssr: false }
+);
+
 const SHUTTER_SOUND = "/sony_shutter.mp3";
 const FOCUS_SOUND = "/focus.mp3";
 
@@ -212,6 +217,10 @@ export default function PanoPage() {
         onFocus={onFocus}
         cameraOverlayActive={cameraOverlayActive}
       />
+      
+      {/* Camera Equipment HUD - Minecraft-style armor slots */}
+      <CameraEquipmentHUD position="left" />
+      
       {/* Small camera overlay — always visible */}
       <img
         src="/camera_pov.png"
