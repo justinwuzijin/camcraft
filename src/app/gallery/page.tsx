@@ -6,6 +6,7 @@ import Image from "next/image";
 import { getGalleryEntries, removeGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
 import { resetUnseen } from "@/lib/galleryBadgeStore";
+import ImageAnalysisPanel from "@/components/ImageAnalysisPanel";
 
 type ServerImage = {
   filename: string;
@@ -568,6 +569,17 @@ export default function GalleryPage() {
                       </span>
                     </div>
                   </div>
+                </div>
+
+                <div className="h-px bg-white/[0.06] mb-8" />
+
+                {/* AI Analysis */}
+                <div className="mb-8">
+                  <ImageAnalysisPanel
+                    imagePath={selected.imagePath}
+                    scene={selected.scene as Record<string, string | undefined>}
+                    camera={selected.camera}
+                  />
                 </div>
 
                 <div className="h-px bg-white/[0.06] mb-8" />
