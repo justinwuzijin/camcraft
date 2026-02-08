@@ -6,7 +6,20 @@ import Image from "next/image";
 interface GestureTutorialProps {
   onComplete: () => void;
   isVisible: boolean;
+  isLoading?: boolean;
 }
+
+const LOADING_MESSAGES = [
+  "Analyzing scene parameters...",
+  "Building the mesh...",
+  "Generating panoramic textures...",
+  "Mapping equirectangular projection...",
+  "Compositing lighting and shadows...",
+  "Rendering atmospheric effects...",
+  "Applying post-processing...",
+  "Stitching panorama seams...",
+  "Finalizing image data...",
+];
 
 // Hand image component with CSS-based gesture animations
 const AnimatedHand = ({
@@ -254,9 +267,11 @@ const GestureCard = ({
   );
 };
 
-export default function GestureTutorial({ onComplete, isVisible }: GestureTutorialProps) {
+export default function GestureTutorial({ onComplete, isVisible, isLoading = false }: GestureTutorialProps) {
   const [activeGesture, setActiveGesture] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  const [fakeProgress, setFakeProgress] = useState(0);
+  const [loadingMsgIndex, setLoadingMsgIndex] = useState(0);
 
   const gestures = [
     {
@@ -300,15 +315,54 @@ export default function GestureTutorial({ onComplete, isVisible }: GestureTutori
     return () => clearInterval(interval);
   }, [gestures.length, isVisible]);
 
-  // Enable button after delay
+  // Ready = generation done (not loading) and minimum time elapsed
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   useEffect(() => {
     if (!isVisible) {
       setIsReady(false);
+      setMinTimeElapsed(false);
+      setLoadingMsgIndex(0);
       return;
     }
-    const timer = setTimeout(() => setIsReady(true), 3000);
+    const timer = setTimeout(() => setMinTimeElapsed(true), 3000);
     return () => clearTimeout(timer);
   }, [isVisible]);
+
+  useEffect(() => {
+    setIsReady(minTimeElapsed && !isLoading);
+  }, [minTimeElapsed, isLoading]);
+
+  // Fake progress bar: accelerates to ~85%, then crawls until generation finishes
+  useEffect(() => {
+    if (!isVisible) {
+      setFakeProgress(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setFakeProgress((prev) => {
+        if (!isLoading) {
+          // Generation done — quickly fill to 100
+          return prev >= 100 ? 100 : Math.min(100, prev + 4);
+        }
+        // Still loading — slow asymptotic approach to 90
+        if (prev < 30) return prev + 2.5;
+        if (prev < 60) return prev + 1.2;
+        if (prev < 80) return prev + 0.4;
+        if (prev < 90) return prev + 0.1;
+        return prev + 0.02;
+      });
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isVisible, isLoading]);
+
+  // Advance loading messages (never cycles back)
+  useEffect(() => {
+    if (!isVisible || !isLoading) return;
+    const interval = setInterval(() => {
+      setLoadingMsgIndex((prev) => Math.min(prev + 1, LOADING_MESSAGES.length - 1));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isVisible, isLoading]);
 
   if (!isVisible) return null;
 
@@ -391,6 +445,34 @@ export default function GestureTutorial({ onComplete, isVisible }: GestureTutori
           <span>Webcam required for gesture detection</span>
         </div>
 
+        {/* Loading bar + status */}
+        {!isReady && (
+          <div className="mb-6 px-4">
+            {/* Progress bar */}
+            <div className="relative h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-[#B0FBCD] transition-all duration-300 ease-out"
+                style={{ width: `${fakeProgress}%` }}
+              />
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-[#B0FBCD]/40 blur-sm transition-all duration-300 ease-out"
+                style={{ width: `${fakeProgress}%` }}
+              />
+            </div>
+            {/* Status text */}
+            <div className="mt-2.5 flex items-center justify-center gap-2 text-xs text-white/40">
+              <svg className="animate-spin h-3 w-3 text-[#B0FBCD]/60" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+              </svg>
+              <span className="transition-opacity duration-300">
+                {isLoading ? LOADING_MESSAGES[loadingMsgIndex] : "Almost there..."}
+              </span>
+              <span className="text-white/20">{Math.round(fakeProgress)}%</span>
+            </div>
+          </div>
+        )}
+
         {/* Continue button */}
         <div className="flex justify-center">
           <button
@@ -402,7 +484,7 @@ export default function GestureTutorial({ onComplete, isVisible }: GestureTutori
                 : "bg-white/10 text-white/30 cursor-not-allowed"
             }`}
           >
-            {isReady ? "Got it!" : "Please wait..."}
+            {isReady ? "Got it!" : "Generating panorama..."}
           </button>
         </div>
       </div>

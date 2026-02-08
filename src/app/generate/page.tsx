@@ -595,9 +595,10 @@ export default function GeneratePage() {
       `}</style>
 
       {/* Gesture Tutorial Popup - shown during generation */}
-      <GestureTutorial 
-        isVisible={showTutorial} 
-        onComplete={handleTutorialComplete} 
+      <GestureTutorial
+        isVisible={showTutorial}
+        onComplete={handleTutorialComplete}
+        isLoading={isGenerating}
       />
     </div>
   );
