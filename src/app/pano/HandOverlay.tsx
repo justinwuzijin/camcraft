@@ -8,11 +8,15 @@ import {
   detectFist,
   detectOpenHand,
   getFistOpenDebug,
+  detectFocus,
+  getFocusDebug,
   PINCH_DISTANCE_THRESHOLD,
   ROTATE_SENSITIVITY,
   PINCH_DEAD_ZONE,
   PICTURE_FRAME_HOLD_MS,
   PICTURE_FRAME_COOLDOWN_MS,
+  FOCUS_HOLD_MS,
+  FOCUS_COOLDOWN_MS,
   FIST_TO_OPEN_WINDOW_MS,
   FIST_TO_OPEN_COOLDOWN_MS,
 } from "./gestures";
@@ -53,6 +57,8 @@ export default function HandOverlay({
   const EMA_ALPHA = 0.35; // lower = smoother but laggier
   const pictureFrameHoldStartRef = useRef<number | null>(null);
   const pictureFrameLastFiredRef = useRef<number>(0);
+  const focusHoldStartRef = useRef<number | null>(null);
+  const focusLastFiredRef = useRef<number>(0);
   const logBoxRef = useRef<HTMLDivElement>(null);
   const handLandmarkerRef = useRef<{
     detectForVideo: (
@@ -349,23 +355,56 @@ export default function HandOverlay({
           pictureFrameHoldStartRef.current = null;
         }
 
+        // ── Focus gesture (left hand only, same shape as picture frame; requires overlay) ──
+        const leftHandFocus =
+          overlayOn && detectFocus(result.landmarks, handednessLabels);
+        const focusDebug = getFocusDebug(result.landmarks, handednessLabels);
+        if (leftHandFocus) {
+          if (focusHoldStartRef.current === null) {
+            focusHoldStartRef.current = now;
+          }
+          const held = now - focusHoldStartRef.current;
+          const cooldownPassed =
+            now - focusLastFiredRef.current >= FOCUS_COOLDOWN_MS;
+          if (held >= FOCUS_HOLD_MS && cooldownPassed) {
+            focusLastFiredRef.current = now;
+            new Audio("/focus.mp3").play().catch(() => {});
+          }
+        } else {
+          focusHoldStartRef.current = null;
+        }
+
         if (logBoxRef.current) {
           const handsCount = result.landmarks.length;
+          const rightIdx = handednessLabels.findIndex(
+            (h) => h?.toLowerCase() === "right"
+          );
+          const rightHandDebug =
+            rightIdx >= 0 && rightIdx < pictureFrameDebug.length
+              ? pictureFrameDebug[rightIdx]
+              : null;
           const pfLines =
-            pictureFrameDebug.length === 0
+            handsCount === 0
               ? ["PF: (no hands)"]
-              : pictureFrameDebug.map((h, i) => {
-                  const fails: string[] = [];
-                  if (!h.indexExtended) fails.push("idx");
-                  if (!h.thumbExtended) fails.push("thumb");
-                  if (!h.thumbIndexSpread) fails.push("spread");
-                  if (!h.middleCurl) fails.push("mid");
-                  if (!h.ringCurl) fails.push("ring");
-                  if (!h.pinkyCurl) fails.push("pink");
-                  const status =
-                    fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
-                  return `PF hand ${i}: ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`;
-                });
+              : rightIdx === -1
+                ? ["PF: (no right hand)"]
+                : rightHandDebug === null
+                  ? ["PF (right): (no landmarks)"]
+                  : (() => {
+                      const h = rightHandDebug;
+                      const fails: string[] = [];
+                      if (!h.indexExtended) fails.push("idx");
+                      if (!h.thumbExtended) fails.push("thumb");
+                      if (!h.thumbIndexSpread) fails.push("spread");
+                      if (!h.middleCurl) fails.push("mid");
+                      if (!h.ringCurl) fails.push("ring");
+                      if (!h.pinkyCurl) fails.push("pink");
+                      const status =
+                        fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
+                      return [
+                        `PF (right): ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
+                      ];
+                    })();
           const fistTrackingStatus = fistSeenRef.current !== null ? " TRACKING" : "";
           const logText = [
             `Hands detected: ${handsCount}`,
@@ -375,6 +414,7 @@ export default function HandOverlay({
             `Camera overlay: ${overlayOn ? "ACTIVE" : "off"}`,
             `Picture frame: ${rightHandPictureFrame ? "yes" : "no"}${!overlayOn ? " (needs overlay)" : ""}`,
             ...pfLines,
+            `Focus (left): ${leftHandFocus ? "YES" : "no"}${!overlayOn ? " (needs overlay)" : ""}${focusDebug ? ` (idx=${focusDebug.indexDist.toFixed(2)} thumb=${focusDebug.thumbDist.toFixed(2)} spread=${focusDebug.spread.toFixed(2)} mid=${focusDebug.middleDist.toFixed(2)} ring=${focusDebug.ringDist.toFixed(2)} pink=${focusDebug.pinkyDist.toFixed(2)})` : ""}`,
             "Camera: on",
           ].join("<br>");
           if (logText !== lastLogRef.current) {

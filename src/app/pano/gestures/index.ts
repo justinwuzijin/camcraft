@@ -15,3 +15,9 @@ export {
   FIST_TO_OPEN_COOLDOWN_MS,
 } from "./openHand";
 export type { FistOpenDebug } from "./openHand";
+export {
+  detectFocus,
+  getFocusDebug,
+  FOCUS_HOLD_MS,
+  FOCUS_COOLDOWN_MS,
+} from "./focus";

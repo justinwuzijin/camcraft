@@ -118,8 +118,11 @@ export function detectPictureFrame(
   return hands.length >= 1 && hands.some((hand) => isPictureFrameHand(hand));
 }
 
+/**
+ * Returns picture-frame debug per hand; array is aligned with hands (null for invalid/missing).
+ */
 export function getPictureFrameDebug(
   hands: HandLandmarks[]
-): PictureFrameHandDebug[] {
-  return hands.map(evaluatePictureFrameHand).filter((e): e is PictureFrameHandDebug => e !== null);
+): (PictureFrameHandDebug | null)[] {
+  return hands.map(evaluatePictureFrameHand);
 }
