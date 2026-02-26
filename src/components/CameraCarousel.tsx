@@ -7,6 +7,8 @@ import { Vector3, Object3D, Group } from "three";
 import gsap from "gsap";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { setActiveCamera } from "@/lib/cameraStore";
+import type { CameraId } from "@/lib/cameraStore";
 
 const CameraEquipmentHUD = dynamic(
   () => import("@/components/CameraEquipmentHUD"),
@@ -733,6 +735,7 @@ export const CameraCarousel = ({ onCarouselChange, onTryOutClick }: CameraCarous
       onCarouselChange?.(currentIndex, index);
       setIsExploded(false);
       setCurrentIndex(index);
+      setActiveCamera(CAMERAS[index].id as CameraId);
     },
     [currentIndex, onCarouselChange]
   );
@@ -921,7 +924,10 @@ export const CameraCarousel = ({ onCarouselChange, onTryOutClick }: CameraCarous
         {isExploded ? (
           <Link
             href="/generate"
-            onClick={() => onTryOutClick?.()}
+            onClick={() => {
+              setActiveCamera(currentCamera.id as CameraId);
+              onTryOutClick?.();
+            }}
             className="group relative inline-block px-10 py-3.5 bg-[#B0FBCD]/[0.08] hover:bg-[#B0FBCD]/[0.14] border border-[#B0FBCD]/20 hover:border-[#B0FBCD]/35 rounded-lg text-[#B0FBCD]/80 hover:text-[#B0FBCD] text-sm tracking-wider uppercase transition-all duration-300"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >

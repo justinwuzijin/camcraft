@@ -5,10 +5,13 @@ import dynamic from "next/dynamic";
 import { NavButton } from "@/components/NavButton";
 import PhotoFlyAnimation from "@/components/PhotoFlyAnimation";
 import HandOverlay from "./HandOverlay";
-import SonyViewfinderHUD from "@/components/SonyViewfinderHUD";
+import CameraViewfinderFrame, { VIEWFINDER_DIMENSIONS, MiniCameraFrame } from "@/components/CameraViewfinderFrame";
+import ViewfinderHUD from "@/components/ViewfinderHUD";
 import { addGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
 import { getUnseenCount, incrementUnseen } from "@/lib/galleryBadgeStore";
+import { getActiveCamera, CAMERA_SPECS } from "@/lib/cameraStore";
+import type { CameraId } from "@/lib/cameraStore";
 
 const PanoViewer = dynamic(() => import("./PanoViewer"), {
   ssr: false,
@@ -27,13 +30,14 @@ const CameraEquipmentHUD = dynamic(
 const SHUTTER_SOUND = "/sony_shutter.mp3";
 const FOCUS_SOUND = "/focus.mp3";
 
-// Viewfinder screen area as fractions of the camera overlay image
-const VF_LEFT = 0.2;
-const VF_TOP = 0.37;
-const VF_WIDTH = 0.4;
-const VF_HEIGHT = 0.5;
-
 export default function PanoPage() {
+  const [activeCamera, setActiveCameraState] = useState<CameraId>("sony-a7iv");
+
+  useEffect(() => {
+    setActiveCameraState(getActiveCamera());
+  }, []);
+
+  const vf = VIEWFINDER_DIMENSIONS[activeCamera];
   const gestureDeltaRef = useRef<{
     deltaAzimuth: number;
     deltaPolar: number;
@@ -115,6 +119,7 @@ export default function PanoPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.savedPath) {
+          const specs = CAMERA_SPECS[activeCamera];
           const entry: GalleryEntry = {
             id: `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
             imagePath: data.savedPath,
@@ -122,12 +127,12 @@ export default function PanoPage() {
             capturedAt: Date.now(),
             scene: {},
             camera: {
-              body: "Sony α7 IV",
-              lens: "FE 24-70mm f/2.8 GM",
-              focalLength: "24-70mm",
-              iso: "100-51200",
-              sensor: "35mm Full-Frame BSI",
-              resolution: "33 Megapixels",
+              body: specs.body,
+              lens: specs.lens,
+              focalLength: specs.focalLength,
+              iso: specs.iso,
+              sensor: specs.sensor,
+              resolution: specs.resolution,
             },
           };
           addGalleryEntry(entry);
@@ -145,7 +150,7 @@ export default function PanoPage() {
         setFlyAnimation({ imageUrl: capturedImage, fromRect: vfRect });
       }, 250);
     }
-  }, []);
+  }, [activeCamera]);
 
   const onFistOpen = useCallback(() => {
     setCameraOverlayActive((prev) => !prev);
@@ -174,10 +179,10 @@ export default function PanoPage() {
     // Crop to viewfinder region using an offscreen canvas
     const img = new Image();
     img.onload = async () => {
-      const cropX = Math.round(img.width * VF_LEFT);
-      const cropY = Math.round(img.height * VF_TOP);
-      const cropW = Math.round(img.width * VF_WIDTH);
-      const cropH = Math.round(img.height * VF_HEIGHT);
+      const cropX = Math.round(img.width * vf.left);
+      const cropY = Math.round(img.height * vf.top);
+      const cropW = Math.round(img.width * vf.width);
+      const cropH = Math.round(img.height * vf.height);
 
       const offscreen = document.createElement("canvas");
       offscreen.width = cropW;
@@ -217,7 +222,7 @@ export default function PanoPage() {
       }
     };
     img.src = dataUrl;
-  }, []);
+  }, [vf]);
 
   useEffect(() => {
     if (!flash) return;
@@ -237,69 +242,33 @@ export default function PanoPage() {
         }`}
         aria-hidden={!cameraOverlayActive}
       >
-        <div className="relative">
-          {/* Flash effect in viewfinder screen */}
+        <CameraViewfinderFrame cameraId={activeCamera}>
+          {/* Flash effect */}
           {flash && (
-            <div
-              className="absolute bg-white/80"
-              style={{
-                left: `${VF_LEFT * 100}%`,
-                top: `${VF_TOP * 100}%`,
-                width: `${VF_WIDTH * 100}%`,
-                height: `${VF_HEIGHT * 100}%`,
-              }}
-              aria-hidden
-            />
+            <div className="absolute inset-0 bg-white/80" aria-hidden />
           )}
-          {/* Focus loading / result in viewfinder screen */}
-          {(focusLoading || focusImage) && (
-            <div
-              ref={viewfinderRef}
-              className="absolute overflow-hidden"
-              style={{
-                left: `${VF_LEFT * 100}%`,
-                top: `${VF_TOP * 100}%`,
-                width: `${VF_WIDTH * 100}%`,
-                height: `${VF_HEIGHT * 100}%`,
-              }}
-            >
-              {focusLoading && (
-                <div className="absolute inset-0 bg-black/70">
-                  <SonyViewfinderHUD focusLoading={true} focusConfirmed={false} />
-                </div>
-              )}
-              {focusImage && !focusLoading && (
-                <>
-                  <img
-                    src={focusImage}
-                    alt="Focused shot"
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                  <SonyViewfinderHUD focusLoading={false} focusConfirmed={true} />
-                </>
-              )}
+          {/* Focus loading state */}
+          {focusLoading && (
+            <div ref={viewfinderRef} className="absolute inset-0 bg-black/70">
+              <ViewfinderHUD cameraId={activeCamera} focusLoading={true} focusConfirmed={false} />
             </div>
           )}
-          {/* Sony viewfinder HUD — always visible on the viewfinder */}
+          {/* Focus result */}
+          {focusImage && !focusLoading && (
+            <div ref={viewfinderRef} className="absolute inset-0">
+              <img
+                src={focusImage}
+                alt="Focused shot"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <ViewfinderHUD cameraId={activeCamera} focusLoading={false} focusConfirmed={true} />
+            </div>
+          )}
+          {/* Default viewfinder HUD */}
           {!focusLoading && !focusImage && (
-            <div
-              className="absolute overflow-hidden"
-              style={{
-                left: `${VF_LEFT * 100}%`,
-                top: `${VF_TOP * 100}%`,
-                width: `${VF_WIDTH * 100}%`,
-                height: `${VF_HEIGHT * 100}%`,
-              }}
-            >
-              <SonyViewfinderHUD />
-            </div>
+            <ViewfinderHUD cameraId={activeCamera} />
           )}
-          <img
-            src="/camera_pov.png"
-            alt=""
-            className="relative z-[1] h-[90vh] w-auto max-w-[95vw] object-contain"
-          />
-        </div>
+        </CameraViewfinderFrame>
       </div>
       <HandOverlay
         gestureDeltaRef={gestureDeltaRef}
@@ -335,12 +304,9 @@ export default function PanoPage() {
       )}
 
       {/* Small camera overlay — always visible */}
-      <img
-        src="/camera_pov.png"
-        alt=""
-        className="pointer-events-none absolute bottom-8 left-1/2 z-10 w-48 -translate-x-1/2 object-contain"
-        aria-hidden
-      />
+      <div className="pointer-events-none absolute bottom-8 left-1/2 z-10 -translate-x-1/2" aria-hidden>
+        <MiniCameraFrame cameraId={activeCamera} />
+      </div>
     </div>
   );
 }
