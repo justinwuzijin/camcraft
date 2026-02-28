@@ -67,7 +67,7 @@ function SliderControl({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span
-          className="text-[10px] tracking-[0.2em] uppercase text-white/60"
+          className="text-xs tracking-[0.2em] uppercase text-white/60"
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {label}
@@ -75,7 +75,7 @@ function SliderControl({
         <button
           type="button"
           onClick={() => onChange(isRandom ? fallback : null)}
-          className={`rounded-full px-3 py-0.5 text-[10px] tracking-wider uppercase transition-all ${
+          className={`rounded-full px-3 py-0.5 text-xs tracking-wider uppercase transition-all ${
             isRandom
               ? "text-white/40 hover:text-white/60"
               : "text-[#B0FBCD]/80 hover:text-[#B0FBCD]"
@@ -100,7 +100,7 @@ function SliderControl({
           {options.map((opt, i) => (
             <span
               key={opt}
-              className={`text-[9px] tracking-wide leading-tight transition-colors duration-200 ${
+              className={`text-[11px] tracking-wide leading-tight transition-colors duration-200 ${
                 i === displayIdx && !isRandom ? "text-[#B0FBCD]/90" : "text-white/45"
               }`}
               style={{ width: `${100 / options.length}%`, textAlign: "center", fontFamily: "var(--font-geist-mono)" }}
@@ -167,7 +167,7 @@ function ChipSelector({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span
-          className="text-[10px] tracking-[0.2em] uppercase text-white/60"
+          className="text-xs tracking-[0.2em] uppercase text-white/60"
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {label}
@@ -176,7 +176,7 @@ function ChipSelector({
           <button
             type="button"
             onClick={handleClear}
-            className="text-[10px] tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
+            className="text-xs tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Clear
@@ -184,7 +184,7 @@ function ChipSelector({
         )}
         {isRandom && !customMode && (
           <span
-            className="text-[10px] tracking-wider uppercase text-white/40"
+            className="text-xs tracking-wider uppercase text-white/40"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Any
@@ -891,7 +891,7 @@ export default function GeneratePage() {
             {/* Section: Location */}
             <div className="mb-8">
               <div
-                className="text-[10px] tracking-[0.25em] uppercase text-white/60 mb-4"
+                className="text-xs tracking-[0.25em] uppercase text-white/60 mb-4"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 Location
@@ -930,7 +930,7 @@ export default function GeneratePage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span
-                    className="text-[10px] tracking-[0.2em] uppercase text-white/60"
+                    className="text-xs tracking-[0.2em] uppercase text-white/60"
                     style={{ fontFamily: "var(--font-geist-mono)" }}
                   >
                     Additional Instructions
@@ -939,7 +939,7 @@ export default function GeneratePage() {
                     <button
                       type="button"
                       onClick={() => setInstructions("")}
-                      className="text-[10px] tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
+                      className="text-xs tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
                       style={{ fontFamily: "var(--font-geist-mono)" }}
                     >
                       Clear
