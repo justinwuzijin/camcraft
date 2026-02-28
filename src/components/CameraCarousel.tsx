@@ -5,7 +5,6 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Environment, useGLTF, Html } from "@react-three/drei";
 import { Vector3, Object3D, Group } from "three";
 import gsap from "gsap";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { setActiveCamera } from "@/lib/cameraStore";
 import type { CameraId } from "@/lib/cameraStore";

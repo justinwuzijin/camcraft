@@ -5,7 +5,10 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { NavButton } from "@/components/NavButton";
+import WorldPickerModal from "@/components/WorldPickerModal";
+import type { WorldEntry } from "@/lib/worldStore";
 
 // Dynamically import CameraCarousel with SSR disabled
 // Three.js requires browser APIs that aren't available during server-side rendering
@@ -103,15 +106,33 @@ function ShutterOpenOverlay() {
 }
 
 export default function CreatePage() {
+  const router = useRouter();
+  const [worlds, setWorlds] = useState<WorldEntry[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
+
   const playCarouselSound = useCallback(() => {
     const audio = new Audio("/carousel.mp3");
     audio.play().catch(() => {});
   }, []);
 
-  const playConfirmSound = useCallback(() => {
+  const handleTryOut = useCallback(async () => {
     const audio = new Audio("/confirm_button.mp3");
     audio.play().catch(() => {});
-  }, []);
+
+    try {
+      const res = await fetch("/api/worlds");
+      const data = await res.json();
+      const fetchedWorlds: WorldEntry[] = data.worlds ?? [];
+      if (fetchedWorlds.length === 0) {
+        router.push("/generate");
+      } else {
+        setWorlds(fetchedWorlds);
+        setShowPicker(true);
+      }
+    } catch {
+      router.push("/generate");
+    }
+  }, [router]);
 
   return (
     <>
