@@ -29,6 +29,40 @@ const MODEL_URL =
 const PREVIEW_WIDTH = 370;
 const PREVIEW_HEIGHT = 240;
 
+// Module-level singleton — MediaPipe's WASM runtime is shared and closing/reopening
+// an instance corrupts it. Keeping one instance alive across React re-mounts is safe.
+type LandmarkerHandle = {
+  detectForVideo: (
+    image: HTMLVideoElement,
+    timestamp: number
+  ) => { landmarks: { x: number; y: number }[][]; handedness?: { categoryName?: string }[][] };
+  HAND_CONNECTIONS: { start: number; end: number }[];
+};
+let _landmarker: LandmarkerHandle | null = null;
+let _landmarkerPromise: Promise<LandmarkerHandle> | null = null;
+
+async function getHandLandmarker(): Promise<LandmarkerHandle> {
+  if (_landmarker) return _landmarker;
+  if (_landmarkerPromise) return _landmarkerPromise;
+  _landmarkerPromise = (async () => {
+    const { FilesetResolver, HandLandmarker } = await import("@mediapipe/tasks-vision");
+    const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
+    const hl = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: { modelAssetPath: MODEL_URL },
+      runningMode: "VIDEO",
+      numHands: 2,
+      minHandDetectionConfidence: 0.3,
+      minHandPresenceConfidence: 0.3,
+    });
+    _landmarker = {
+      detectForVideo: (img, ts) => hl.detectForVideo(img, ts),
+      HAND_CONNECTIONS: HandLandmarker.HAND_CONNECTIONS,
+    };
+    return _landmarker;
+  })();
+  return _landmarkerPromise;
+}
+
 export type GestureDeltaRef = React.MutableRefObject<{
   deltaAzimuth: number;
   deltaPolar: number;
@@ -87,8 +121,8 @@ export default function HandOverlay({
 
     async function init() {
       try {
-        const [{ FilesetResolver, HandLandmarker }] = await Promise.all([
-          import("@mediapipe/tasks-vision").then((m) => m),
+        const [landmarker] = await Promise.all([
+          getHandLandmarker(),
           (async () => {
             stream = await navigator.mediaDevices.getUserMedia({
               video: { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT },
@@ -103,24 +137,7 @@ export default function HandOverlay({
 
         if (aborted) return;
 
-        const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
-        if (aborted) return;
-
-        const handLandmarker = await HandLandmarker.createFromOptions(vision, {
-          baseOptions: { modelAssetPath: MODEL_URL },
-          runningMode: "VIDEO",
-          numHands: 2,
-          minHandDetectionConfidence: 0.3,
-          minHandPresenceConfidence: 0.3,
-        });
-
-        if (aborted) return;
-
-        handLandmarkerRef.current = {
-          detectForVideo: (img: HTMLVideoElement, ts: number) =>
-            handLandmarker.detectForVideo(img, ts),
-          HAND_CONNECTIONS: HandLandmarker.HAND_CONNECTIONS,
-        };
+        handLandmarkerRef.current = landmarker;
         setReady(true);
       } catch (e) {
         if (aborted) return;
@@ -131,6 +148,7 @@ export default function HandOverlay({
     init();
     return () => {
       aborted = true;
+      handLandmarkerRef.current = null;
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }

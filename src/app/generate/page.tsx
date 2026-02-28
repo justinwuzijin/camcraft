@@ -870,6 +870,17 @@ function GeneratePageContent() {
           <WorldPickerModal
             worlds={worlds}
             onClose={() => setShowPicker(false)}
+            onSelectWorld={(world) => {
+              setShowPicker(false);
+              if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
+              setPanoUrl(world.panoPath);
+              setResolvedParams(null);
+              setFocusImage(null);
+              focusBase64Ref.current = null;
+              setCameraOverlayActive(false);
+              setShowViewer(true);
+              setTutorialDismissed(true);
+            }}
             onGenerateNew={() => {
               setShowPicker(false);
               setShowViewer(false);

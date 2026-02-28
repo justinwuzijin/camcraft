@@ -78,9 +78,12 @@ function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: (
   if (parameters.weather && parameters.weather !== "Default") chips.push(parameters.weather);
 
   return (
-    <motion.button
+    <motion.div
       onClick={onClick}
-      className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] text-left transition-all duration-300 hover:border-[#B0FBCD]/30 hover:bg-white/[0.06]"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
+      className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] text-left transition-all duration-300 hover:border-[#B0FBCD]/30 hover:bg-white/[0.06] cursor-pointer"
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
     >
@@ -158,7 +161,7 @@ function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: (
           <path d="M3 7H11M8 4L11 7L8 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
@@ -167,9 +170,10 @@ type Props = {
   worlds: WorldEntry[];
   onClose: () => void;
   onGenerateNew: () => void;
+  onSelectWorld?: (world: WorldEntry) => void;
 };
 
-export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGenerateNew }: Props) {
+export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGenerateNew, onSelectWorld }: Props) {
   const router = useRouter();
   const [worlds, setWorlds] = useState<WorldEntry[]>(initialWorlds);
 
@@ -184,9 +188,13 @@ export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGen
 
   const handleSelectWorld = useCallback(
     (world: WorldEntry) => {
-      router.push(`/generate?pano=${encodeURIComponent(world.panoPath)}`);
+      if (onSelectWorld) {
+        onSelectWorld(world);
+      } else {
+        router.push(`/generate?pano=${encodeURIComponent(world.panoPath)}`);
+      }
     },
-    [router]
+    [router, onSelectWorld]
   );
 
   const handleDelete = useCallback((world: WorldEntry) => {
