@@ -67,7 +67,7 @@ function SliderControl({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span
-          className="text-xs tracking-[0.2em] uppercase text-white/60"
+          className="text-sm tracking-[0.2em] uppercase text-white/60"
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {label}
@@ -75,7 +75,7 @@ function SliderControl({
         <button
           type="button"
           onClick={() => onChange(isRandom ? fallback : null)}
-          className={`rounded-full px-3 py-0.5 text-xs tracking-wider uppercase transition-all ${
+          className={`rounded-full px-3 py-0.5 text-sm tracking-wider uppercase transition-all ${
             isRandom
               ? "text-white/40 hover:text-white/60"
               : "text-[#B0FBCD]/80 hover:text-[#B0FBCD]"
@@ -100,7 +100,7 @@ function SliderControl({
           {options.map((opt, i) => (
             <span
               key={opt}
-              className={`text-[11px] tracking-wide leading-tight transition-colors duration-200 ${
+              className={`text-xs tracking-wide leading-tight transition-colors duration-200 ${
                 i === displayIdx && !isRandom ? "text-[#B0FBCD]/90" : "text-white/45"
               }`}
               style={{ width: `${100 / options.length}%`, textAlign: "center", fontFamily: "var(--font-geist-mono)" }}
@@ -167,7 +167,7 @@ function ChipSelector({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span
-          className="text-xs tracking-[0.2em] uppercase text-white/60"
+          className="text-sm tracking-[0.2em] uppercase text-white/60"
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {label}
@@ -176,7 +176,7 @@ function ChipSelector({
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
+            className="text-sm tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Clear
@@ -184,7 +184,7 @@ function ChipSelector({
         )}
         {isRandom && !customMode && (
           <span
-            className="text-xs tracking-wider uppercase text-white/40"
+            className="text-sm tracking-wider uppercase text-white/40"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Any
@@ -203,7 +203,7 @@ function ChipSelector({
                 setCustomText("");
                 onChange(selected ? null : opt.toLowerCase());
               }}
-              className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
+              className={`rounded-full px-3 py-1.5 text-xs tracking-wide border transition-all duration-200 ${
                 selected
                   ? "bg-[#B0FBCD]/15 border-[#B0FBCD]/40 text-[#B0FBCD]"
                   : "bg-white/[0.04] border-white/[0.15] text-white/55 hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.25]"
@@ -216,7 +216,7 @@ function ChipSelector({
         <button
           type="button"
           onClick={handleOtherClick}
-          className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
+          className={`rounded-full px-3 py-1.5 text-xs tracking-wide border transition-all duration-200 ${
             customMode || isCustomValue
               ? "bg-[#B0FBCD]/15 border-[#B0FBCD]/40 text-[#B0FBCD]"
               : "bg-white/[0.04] border-white/[0.15] text-white/55 hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.25]"
@@ -891,7 +891,7 @@ export default function GeneratePage() {
             {/* Section: Location */}
             <div className="mb-8">
               <div
-                className="text-xs tracking-[0.25em] uppercase text-white/60 mb-4"
+                className="text-sm tracking-[0.25em] uppercase text-white/60 mb-4"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 Location
@@ -930,7 +930,7 @@ export default function GeneratePage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span
-                    className="text-xs tracking-[0.2em] uppercase text-white/60"
+                    className="text-sm tracking-[0.2em] uppercase text-white/60"
                     style={{ fontFamily: "var(--font-geist-mono)" }}
                   >
                     Additional Instructions
@@ -939,7 +939,7 @@ export default function GeneratePage() {
                     <button
                       type="button"
                       onClick={() => setInstructions("")}
-                      className="text-xs tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
+                      className="text-sm tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
                       style={{ fontFamily: "var(--font-geist-mono)" }}
                     >
                       Clear
@@ -990,22 +990,11 @@ export default function GeneratePage() {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="mt-10 flex items-center justify-center gap-3">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-              <span
-                className="text-[10px] tracking-[0.3em] uppercase text-white/15"
-                style={{ fontFamily: "var(--font-geist-mono)" }}
-              >
-                Gemini &middot; 360&deg;
-              </span>
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            </div>
           </div>
 
           {/* Right column — globe */}
           <div className="hidden lg:flex flex-1 flex-col items-center justify-center sticky top-24">
-            <RotatingEarth width={700} height={700} targetLocation={locationCoords} />
+            <RotatingEarth width={850} height={850} targetLocation={locationCoords} />
 
             {/* Targeting readout */}
             <div className="w-full max-w-[500px] mt-6">
