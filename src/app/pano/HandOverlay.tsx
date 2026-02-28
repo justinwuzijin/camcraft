@@ -105,15 +105,17 @@ export default function HandOverlay({
   } | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const rafRef = useRef<number>(0);
-  const videoTimestampRef = useRef(0);
   const lastLogRef = useRef("");
   const lastRunRef = useRef(0);
   const fistSeenRef = useRef<number | null>(null);
   const fistOpenLastFiredRef = useRef<number>(0);
   const onFistOpenRef = useRef(onFistOpen);
-  onFistOpenRef.current = onFistOpen;
   const cameraOverlayActiveRef = useRef(cameraOverlayActive);
-  cameraOverlayActiveRef.current = cameraOverlayActive;
+
+  useEffect(() => {
+    onFistOpenRef.current = onFistOpen;
+    cameraOverlayActiveRef.current = cameraOverlayActive;
+  });
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -145,6 +147,8 @@ export default function HandOverlay({
       }
     }
 
+    const currentVideo = videoRef.current;
+
     init();
     return () => {
       aborted = true;
@@ -152,8 +156,7 @@ export default function HandOverlay({
       if (stream) {
         stream.getTracks().forEach((t) => t.stop());
       }
-      const video = videoRef.current;
-      if (video) video.srcObject = null;
+      if (currentVideo) currentVideo.srcObject = null;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
@@ -248,8 +251,7 @@ export default function HandOverlay({
       if (runDetection) {
         lastVideoTimeRef.current = video.currentTime;
         lastRunRef.current = now;
-        videoTimestampRef.current += 33333;
-        const ts = videoTimestampRef.current;
+        const ts = now;
         let result: {
           landmarks: { x: number; y: number }[][];
           handedness?: { categoryName?: string }[][];
@@ -292,9 +294,9 @@ export default function HandOverlay({
             const prev = smoothPinchRef.current;
             const smoothed = prev
               ? {
-                  x: prev.x + EMA_ALPHA * (pinching.x - prev.x),
-                  y: prev.y + EMA_ALPHA * (pinching.y - prev.y),
-                }
+                x: prev.x + EMA_ALPHA * (pinching.x - prev.x),
+                y: prev.y + EMA_ALPHA * (pinching.y - prev.y),
+              }
               : pinching;
             smoothPinchRef.current = smoothed;
 
@@ -414,20 +416,20 @@ export default function HandOverlay({
                 : rightHandDebug === null
                   ? ["PF (right): (no landmarks)"]
                   : (() => {
-                      const h = rightHandDebug;
-                      const fails: string[] = [];
-                      if (!h.indexExtended) fails.push("idx");
-                      if (!h.thumbExtended) fails.push("thumb");
-                      if (!h.thumbIndexSpread) fails.push("spread");
-                      if (!h.middleCurl) fails.push("mid");
-                      if (!h.ringCurl) fails.push("ring");
-                      if (!h.pinkyCurl) fails.push("pink");
-                      const status =
-                        fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
-                      return [
-                        `PF (right): ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
-                      ];
-                    })();
+                    const h = rightHandDebug;
+                    const fails: string[] = [];
+                    if (!h.indexExtended) fails.push("idx");
+                    if (!h.thumbExtended) fails.push("thumb");
+                    if (!h.thumbIndexSpread) fails.push("spread");
+                    if (!h.middleCurl) fails.push("mid");
+                    if (!h.ringCurl) fails.push("ring");
+                    if (!h.pinkyCurl) fails.push("pink");
+                    const status =
+                      fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
+                    return [
+                      `PF (right): ${status} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
+                    ];
+                  })();
           const focusLines =
             handsCount === 0
               ? ["Focus (left): (no hands)"]
@@ -436,21 +438,21 @@ export default function HandOverlay({
                 : focusDebug === null
                   ? ["Focus (left): (no landmarks)"]
                   : (() => {
-                      const h = focusDebug;
-                      const fails: string[] = [];
-                      if (!h.indexExtended) fails.push("idx");
-                      if (!h.thumbExtended) fails.push("thumb");
-                      if (!h.thumbIndexSpread) fails.push("spread");
-                      if (!h.middleCurl) fails.push("mid");
-                      if (!h.ringCurl) fails.push("ring");
-                      if (!h.pinkyCurl) fails.push("pink");
-                      const status =
-                        fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
-                      const overlayHint = !overlayOn ? " (needs overlay)" : "";
-                      return [
-                        `Focus (left): ${status}${overlayHint} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
-                      ];
-                    })();
+                    const h = focusDebug;
+                    const fails: string[] = [];
+                    if (!h.indexExtended) fails.push("idx");
+                    if (!h.thumbExtended) fails.push("thumb");
+                    if (!h.thumbIndexSpread) fails.push("spread");
+                    if (!h.middleCurl) fails.push("mid");
+                    if (!h.ringCurl) fails.push("ring");
+                    if (!h.pinkyCurl) fails.push("pink");
+                    const status =
+                      fails.length === 0 ? "ok" : `fail: ${fails.join(",")}`;
+                    const overlayHint = !overlayOn ? " (needs overlay)" : "";
+                    return [
+                      `Focus (left): ${status}${overlayHint} (idx=${h.indexDist.toFixed(2)} thumb=${h.thumbDist.toFixed(2)} spread=${h.spread.toFixed(2)} mid=${h.middleDist.toFixed(2)} ring=${h.ringDist.toFixed(2)} pink=${h.pinkyDist.toFixed(2)})`,
+                    ];
+                  })();
           const fistTrackingStatus = fistSeenRef.current !== null ? " TRACKING" : "";
           const logText = [
             `Hands detected: ${handsCount}`,
@@ -476,7 +478,7 @@ export default function HandOverlay({
       resizeObserver.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [ready, gestureDeltaRef, onPictureFrame]);
+  }, [ready, gestureDeltaRef, onPictureFrame, onFocus]);
 
   if (error) {
     return (
