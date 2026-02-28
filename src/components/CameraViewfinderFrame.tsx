@@ -19,12 +19,13 @@ export const CAMERA_BACK_IMAGES: Record<CameraId, string> = {
 };
 
 // Viewfinder screen position for each camera (where the transparent LCD area is)
-// Values are fractions (0-1) of the image dimensions - calibrated to actual images
+// Measured from alpha channel boundaries, expanded 4px outward to fully cover the
+// transparent area. Overshoot is hidden by the camera image rendering at z-[1].
 export const VIEWFINDER_DIMENSIONS: Record<CameraId, ViewfinderDimensions> = {
-  "sony-a7iv": { left: 0.08, top: 0.20, width: 0.56, height: 0.65 },
-  "fujifilm-xt2": { left: 0.055, top: 0.20, width: 0.59, height: 0.68 },
-  "digital-camera": { left: 0.09, top: 0.115, width: 0.51, height: 0.76 },
-  "sony-handycam": { left: 0.05, top: 0.22, width: 0.50, height: 0.62 },
+  "sony-a7iv": { left: 0.1650, top: 0.4020, width: 0.3792, height: 0.3995 },
+  "fujifilm-xt2": { left: 0.1683, top: 0.3750, width: 0.4069, height: 0.4216 },
+  "digital-camera": { left: 0.1977, top: 0.2696, width: 0.3562, height: 0.5000 },
+  "sony-handycam": { left: 0.2647, top: 0.4730, width: 0.3039, height: 0.2770 },
 };
 
 interface CameraViewfinderFrameProps {
@@ -43,7 +44,7 @@ export default function CameraViewfinderFrame({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Children (HUD, flash, focus image) rendered in the viewfinder area */}
+      {/* Children (focus image, flash, etc.) rendered in the viewfinder area */}
       {children && (
         <div
           className="absolute overflow-hidden z-0"
@@ -61,7 +62,7 @@ export default function CameraViewfinderFrame({
       <img
         src={imageSrc}
         alt=""
-        className="relative z-[1] h-[90vh] w-auto max-w-[95vw] object-contain pointer-events-none"
+        className="relative z-[1] h-[85vh] w-auto max-w-[90vw] object-contain pointer-events-none"
       />
     </div>
   );

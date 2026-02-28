@@ -10,7 +10,7 @@ import PhotoFlyAnimation from "@/components/PhotoFlyAnimation";
 import CityAutocomplete from "./CityAutocomplete";
 import HandOverlay from "@/app/pano/HandOverlay";
 import CameraViewfinderFrame, { VIEWFINDER_DIMENSIONS, MiniCameraFrame } from "@/components/CameraViewfinderFrame";
-import ViewfinderHUD from "@/components/ViewfinderHUD";
+
 import GestureTutorial from "@/components/GestureTutorial";
 import { addGalleryEntry } from "@/lib/galleryStore";
 import type { GalleryEntry } from "@/lib/galleryStore";
@@ -483,7 +483,6 @@ function GeneratePageContent() {
     imageUrl: string;
     fromRect: DOMRect;
   } | null>(null);
-  // Base64 data of the focused image (kept in memory until captured)
   const focusBase64Ref = useRef<{ data: string; mimeType: string } | null>(null);
 
   const focusImageRef = useRef<string | null>(null);
@@ -507,9 +506,8 @@ function GeneratePageContent() {
   const onPictureFrame = useCallback(() => {
     const img = focusImageRef.current;
     const base64 = focusBase64Ref.current;
-    if (!img || !base64) return; // only save when focused
+    if (!img || !base64) return;
 
-    // Capture the viewfinder rect before flash clears the image
     const vfRect = viewfinderRef.current?.getBoundingClientRect();
     const capturedImage = img;
 
@@ -523,10 +521,9 @@ function GeneratePageContent() {
       audio.currentTime = 0;
       audio.play().catch(() => {});
     } catch {
-      // ignore if audio fails
+      // ignore
     }
 
-    // Download the focused image locally
     const a = document.createElement("a");
     a.href = img;
     a.download = `focus_${Date.now()}.jpg`;
@@ -647,6 +644,7 @@ function GeneratePageContent() {
             image: base64,
             mimeType: "image/jpeg",
             scene: resolvedParams || {},
+            cameraId: activeCamera,
           }),
         });
 
@@ -771,13 +769,13 @@ function GeneratePageContent() {
             {flash && (
               <div className="absolute inset-0 bg-white/80" aria-hidden />
             )}
-            {/* Focus loading state */}
+            {/* Processing overlay — semi-transparent so pano shows through */}
             {focusLoading && (
-              <div ref={viewfinderRef} className="absolute inset-0 bg-black/70">
-                <ViewfinderHUD cameraId={activeCamera} focusLoading={true} focusConfirmed={false} />
+              <div ref={viewfinderRef} className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="text-white text-sm animate-pulse drop-shadow-lg">Processing...</span>
               </div>
             )}
-            {/* Focus result */}
+            {/* Generated image — fills LCD until captured */}
             {focusImage && !focusLoading && (
               <div ref={viewfinderRef} className="absolute inset-0">
                 <img
@@ -785,12 +783,7 @@ function GeneratePageContent() {
                   alt="Focused shot"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
-                <ViewfinderHUD cameraId={activeCamera} focusLoading={false} focusConfirmed={true} />
               </div>
-            )}
-            {/* Default viewfinder HUD */}
-            {!focusLoading && !focusImage && (
-              <ViewfinderHUD cameraId={activeCamera} />
             )}
           </CameraViewfinderFrame>
         </div>
