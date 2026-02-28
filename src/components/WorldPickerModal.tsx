@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { WorldEntry } from "@/lib/worldStore";
@@ -63,7 +63,7 @@ function relativeTime(ts: number): string {
 }
 
 // ── World card ───────────────────────────────────────────────
-function WorldCard({ world, onClick }: { world: WorldEntry; onClick: () => void }) {
+function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: () => void; onDelete: () => void }) {
   const { parameters, panoPath, createdAt } = world;
 
   const primaryLabel =
@@ -101,6 +101,20 @@ function WorldCard({ world, onClick }: { world: WorldEntry; onClick: () => void 
           <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-300 absolute inset-0">
             <ViewfinderCorners active={true} />
           </div>
+        </div>
+
+        {/* Delete button — top-left, hover only */}
+        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.12] bg-[#050507]/80 text-white/40 backdrop-blur-sm transition-all hover:border-red-500/40 hover:bg-red-500/[0.15] hover:text-red-400"
+            aria-label="Delete world"
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+              <path d="M1 1L7 7M7 1L1 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
 
         {/* Time chip overlay */}
@@ -155,8 +169,9 @@ type Props = {
   onGenerateNew: () => void;
 };
 
-export default function WorldPickerModal({ worlds, onClose, onGenerateNew }: Props) {
+export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGenerateNew }: Props) {
   const router = useRouter();
+  const [worlds, setWorlds] = useState<WorldEntry[]>(initialWorlds);
 
   // Close on ESC
   useEffect(() => {
@@ -173,6 +188,21 @@ export default function WorldPickerModal({ worlds, onClose, onGenerateNew }: Pro
     },
     [router]
   );
+
+  const handleDelete = useCallback((world: WorldEntry) => {
+    setWorlds((prev) => {
+      const next = prev.filter((w) => w.id !== world.id);
+      if (next.length === 0) setTimeout(onClose, 300);
+      return next;
+    });
+    fetch("/api/worlds", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ panoPath: world.panoPath }),
+    }).catch(() => {
+      setWorlds((prev) => [world, ...prev].sort((a, b) => b.createdAt - a.createdAt));
+    });
+  }, [onClose]);
 
   return (
     <AnimatePresence>
@@ -281,6 +311,7 @@ export default function WorldPickerModal({ worlds, onClose, onGenerateNew }: Pro
                   <WorldCard
                     world={world}
                     onClick={() => handleSelectWorld(world)}
+                    onDelete={() => handleDelete(world)}
                   />
                 </motion.div>
               ))}
