@@ -83,69 +83,68 @@ function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: (
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
-      className="group relative w-full overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] text-left transition-all duration-300 hover:border-[#B0FBCD]/30 hover:bg-white/[0.06] cursor-pointer"
+      className="group relative w-full aspect-[4/3] overflow-hidden rounded-xl border border-white/[0.08] bg-[#050507] text-left transition-all duration-300 hover:border-[#B0FBCD]/30 hover:bg-white/[0.06] cursor-pointer flex flex-col justify-end"
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
     >
-      {/* Pano thumbnail — crop center strip of equirectangular */}
-      <div className="relative w-full overflow-hidden" style={{ paddingBottom: "56.25%" }}>
-        <img
-          src={panoPath}
-          alt={primaryLabel}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          style={{ objectPosition: "center 30%" }}
-          loading="lazy"
-        />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050507]/80 via-transparent to-transparent" />
+      {/* Background Image */}
+      <img
+        src={panoPath}
+        alt={primaryLabel}
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] z-0"
+        style={{ objectPosition: "center 30%" }}
+        loading="lazy"
+      />
 
-        {/* Viewfinder corners on hover */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-300 absolute inset-0">
-            <ViewfinderCorners active={true} />
-          </div>
-        </div>
+      {/* Gradient & Blur Bottom Overlay for Title Area */}
+      <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-[#050507] via-[#050507]/60 to-transparent pointer-events-none z-0" />
+      <div
+        className="absolute inset-x-0 bottom-0 h-[60%] backdrop-blur-md pointer-events-none z-0"
+        style={{
+          maskImage: "linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 100%)",
+          WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 100%)"
+        }}
+      />
 
-        {/* Delete button — top-left, hover only */}
-        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.12] bg-[#050507]/80 text-white/40 backdrop-blur-sm transition-all hover:border-red-500/40 hover:bg-red-500/[0.15] hover:text-red-400"
-            aria-label="Delete world"
-          >
-            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-              <path d="M1 1L7 7M7 1L1 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Time chip overlay */}
-        <div className="absolute top-2.5 right-2.5">
-          <span
-            className="rounded-full border border-white/[0.12] bg-[#050507]/70 px-2 py-0.5 text-[9px] tracking-[0.2em] uppercase text-white/40 backdrop-blur-sm"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
-          >
-            {relativeTime(createdAt)}
-          </span>
+      {/* Viewfinder corners on hover */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-300 absolute inset-0">
+          <ViewfinderCorners active={true} />
         </div>
       </div>
 
-      {/* Card body */}
-      <div className="px-4 py-3">
-        <p
-          className="text-sm text-white/80 truncate leading-tight"
-          style={{ fontFamily: "var(--font-geist-sans)" }}
+      {/* Delete button — top-left, hover only */}
+      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.12] bg-[#050507]/80 text-white/40 backdrop-blur-sm transition-all hover:border-red-500/40 hover:bg-red-500/[0.15] hover:text-red-400"
+          aria-label="Delete world"
         >
-          {primaryLabel}
-        </p>
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+            <path d="M1 1L7 7M7 1L1 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
 
+      {/* Time chip overlay */}
+      <div className="absolute top-2.5 right-2.5 z-20">
+        <span
+          className="rounded-full border border-white/[0.12] bg-[#050507]/70 px-2 py-0.5 text-[9px] tracking-[0.2em] uppercase text-white/40 backdrop-blur-sm"
+          style={{ fontFamily: "var(--font-geist-mono)" }}
+        >
+          {relativeTime(createdAt)}
+        </span>
+      </div>
+
+      {/* Card body */}
+      <div className="relative z-20 px-4 py-3.5 mt-auto w-full">
         {chips.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1">
+          <div className="mb-2 flex flex-wrap gap-1.5 pr-6">
             {chips.slice(0, 3).map((chip) => (
               <span
                 key={chip}
-                className="rounded-full px-2 py-0.5 text-[9px] tracking-[0.15em] uppercase border border-[#B0FBCD]/15 bg-[#B0FBCD]/[0.06] text-[#B0FBCD]/50"
+                className="rounded-full px-2 py-0.5 text-[9px] tracking-[0.15em] uppercase border border-[#B0FBCD]/15 bg-[#B0FBCD]/[0.06] text-[#B0FBCD]/60"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 {chip}
@@ -153,12 +152,19 @@ function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: (
             ))}
           </div>
         )}
+
+        <p
+          className="text-[15px] font-medium text-white/90 truncate leading-tight drop-shadow-md"
+          style={{ fontFamily: "var(--font-geist-sans)" }}
+        >
+          {primaryLabel}
+        </p>
       </div>
 
       {/* Enter arrow */}
-      <div className="absolute bottom-3 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-[#B0FBCD]/60">
-          <path d="M3 7H11M8 4L11 7L8 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <div className="absolute bottom-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-[#B0FBCD] drop-shadow-lg">
+          <path d="M3 7H11M8 4L11 7L8 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
     </motion.div>
