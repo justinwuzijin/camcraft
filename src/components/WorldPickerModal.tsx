@@ -239,90 +239,98 @@ export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGen
 
         {/* Content */}
         <motion.div
-          className="relative z-10 flex flex-col h-full max-w-4xl mx-auto w-full px-6 sm:px-10"
+          className="relative z-10 flex flex-col h-full w-full"
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 12, opacity: 0 }}
           transition={{ duration: 0.3, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between pt-10 pb-6 shrink-0">
-            <div>
-              <div className="flex items-center gap-2.5 mb-1">
-                {/* Aperture icon */}
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-[#B0FBCD]/50">
-                  <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="0.8" />
-                  <circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="0.8" />
-                  <path d="M7 1.5V3.5M7 10.5V12.5M1.5 7H3.5M10.5 7H12.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
-                </svg>
-                <span
-                  className="text-[10px] tracking-[0.3em] uppercase text-[#B0FBCD]/50"
+          {/* Header (Navbar) */}
+          <header className="pointer-events-auto w-full border-b border-white/[0.06] bg-[#050507]/80 backdrop-blur-xl shrink-0">
+            <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={onClose}
+                  className="group flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:-translate-x-0.5">
+                    <path
+                      d="M10 12L6 8L10 4"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span
+                    className="text-xs tracking-wider"
+                    style={{ fontFamily: "var(--font-geist-mono)" }}
+                  >
+                    Back
+                  </span>
+                </button>
+                <div className="h-4 w-px bg-white/[0.08]" />
+                <h1
+                  className="text-sm tracking-[0.25em] uppercase text-white/70"
                   style={{ fontFamily: "var(--font-geist-mono)" }}
                 >
                   World Library
-                </span>
+                </h1>
               </div>
-              <h2
-                className="text-xl text-white/85 leading-tight"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
-              >
-                Choose a World
-              </h2>
-            </div>
 
-            <div className="flex items-center gap-3">
-              {/* Generate New button */}
-              <button
-                onClick={onGenerateNew}
-                className="group flex items-center gap-2 rounded-lg border border-[#B0FBCD]/20 bg-[#B0FBCD]/[0.06] px-4 py-2 text-xs tracking-[0.2em] uppercase text-[#B0FBCD]/70 transition-all duration-300 hover:border-[#B0FBCD]/40 hover:bg-[#B0FBCD]/[0.12] hover:text-[#B0FBCD]"
-                style={{ fontFamily: "var(--font-geist-mono)" }}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="transition-transform duration-300 group-hover:rotate-90">
-                  <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
-                Generate New
-              </button>
-
-              {/* Close button */}
-              <button
-                onClick={onClose}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-white/40 transition-all hover:border-white/[0.15] hover:text-white/70"
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Top separator */}
-          <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent shrink-0" />
-
-          {/* Sub-label */}
-          <p
-            className="text-xs text-white/30 mt-4 mb-5 shrink-0"
-            style={{ fontFamily: "var(--font-geist-mono)" }}
-          >
-            {worlds.length} saved world{worlds.length !== 1 ? "s" : ""} — click any to enter
-          </p>
-
-          {/* World grid */}
-          <div className="flex-1 overflow-y-auto pb-10 pr-1" style={{ scrollbarWidth: "none" }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {worlds.map((world, i) => (
-                <motion.div
-                  key={world.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.08 + i * 0.04, ease: "easeOut" }}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={onGenerateNew}
+                  className="group flex items-center gap-2 rounded-lg border border-[#B0FBCD]/20 bg-[#B0FBCD]/[0.06] px-4 py-2 text-xs tracking-[0.2em] uppercase text-[#B0FBCD]/70 transition-all duration-300 hover:border-[#B0FBCD]/40 hover:bg-[#B0FBCD]/[0.12] hover:text-[#B0FBCD]"
+                  style={{ fontFamily: "var(--font-geist-mono)" }}
                 >
-                  <WorldCard
-                    world={world}
-                    onClick={() => handleSelectWorld(world)}
-                    onDelete={() => handleDelete(world)}
-                  />
-                </motion.div>
-              ))}
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="transition-transform duration-300 group-hover:rotate-90">
+                    <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                  Generate New
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Inner Content wrapper */}
+          <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-6 sm:px-10 overflow-hidden">
+            {/* Sub-label */}
+            <div className="mt-8 mb-6 shrink-0 flex items-end justify-between">
+              <div>
+                <h2
+                  className="text-xl text-white/85 leading-tight mb-1"
+                  style={{ fontFamily: "var(--font-geist-sans)" }}
+                >
+                  Choose a World
+                </h2>
+                <p
+                  className="text-xs text-white/30"
+                  style={{ fontFamily: "var(--font-geist-mono)" }}
+                >
+                  {worlds.length} saved world{worlds.length !== 1 ? "s" : ""} — click any to enter
+                </p>
+              </div>
+            </div>
+
+            {/* World grid */}
+            <div className="flex-1 overflow-y-auto pb-10 pr-1" style={{ scrollbarWidth: "none" }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {worlds.map((world, i) => (
+                  <motion.div
+                    key={world.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.08 + i * 0.04, ease: "easeOut" }}
+                  >
+                    <WorldCard
+                      world={world}
+                      onClick={() => handleSelectWorld(world)}
+                      onDelete={() => handleDelete(world)}
+                    />
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>
