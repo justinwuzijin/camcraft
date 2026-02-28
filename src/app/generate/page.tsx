@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import NextImage from "next/image";
@@ -417,7 +418,9 @@ const SHUTTER_SOUND = "/sony_shutter.mp3";
 const FOCUS_SOUND = "/focus.mp3";
 
 // ── Main page ─────────────────────────────────────────────────
-export default function GeneratePage() {
+function GeneratePageContent() {
+  const searchParams = useSearchParams();
+
   // Active camera state
   const [activeCamera, setActiveCameraState] = useState<CameraId>("sony-a7iv");
 
@@ -444,6 +447,17 @@ export default function GeneratePage() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialDismissed, setTutorialDismissed] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
+
+  // Load existing world from ?pano= search param
+  useEffect(() => {
+    const pano = searchParams.get("pano");
+    if (pano) {
+      setPanoUrl(pano);
+      setShowViewer(true);
+      setTutorialDismissed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Camera overlay state (same as /pano)
   const gestureDeltaRef = useRef<{ deltaAzimuth: number; deltaPolar: number }>({
@@ -658,10 +672,10 @@ export default function GeneratePage() {
     return () => clearTimeout(t);
   }, [flash]);
 
-  // Cleanup blob URL on unmount
+  // Cleanup blob URL on unmount (only for blob: URLs, not disk paths)
   useEffect(() => {
     return () => {
-      if (panoUrl) URL.revokeObjectURL(panoUrl);
+      if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
     };
   }, [panoUrl]);
 
@@ -719,7 +733,7 @@ export default function GeneratePage() {
       const blob = new Blob([byteArray], { type: data.mimeType });
       const url = URL.createObjectURL(blob);
 
-      if (panoUrl) URL.revokeObjectURL(panoUrl);
+      if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
 
       setPanoUrl(url);
       setResolvedParams(data.parameters);
@@ -801,7 +815,7 @@ export default function GeneratePage() {
             onClick={() => {
               setShowViewer(false);
               setTutorialDismissed(false);
-              if (panoUrl) URL.revokeObjectURL(panoUrl);
+              if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
               setPanoUrl(null);
               setResolvedParams(null);
               setFocusImage(null);
@@ -1111,5 +1125,13 @@ export default function GeneratePage() {
         isLoading={isGenerating}
       />
     </div>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#060608]" />}>
+      <GeneratePageContent />
+    </Suspense>
   );
 }
