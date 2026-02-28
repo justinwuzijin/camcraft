@@ -250,7 +250,7 @@ export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGen
             <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={onClose}
+                  onClick={() => router.push('/create')}
                   className="group flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:-translate-x-0.5">
