@@ -184,7 +184,7 @@ function ChipSelector({
         )}
         {isRandom && !customMode && (
           <span
-            className="text-sm tracking-wider uppercase text-white/40"
+            className="rounded-full px-3 py-0.5 text-sm tracking-wider uppercase text-white/40"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Any
@@ -909,8 +909,6 @@ export default function GeneratePage() {
               <SliderControl label="Time of Day" options={TIME_OPTIONS} value={timeOfDay} onChange={setTimeOfDay} />
               <SliderControl label="Era" options={DECADE_OPTIONS} value={decade} onChange={setDecade} defaultIndex={6} />
             </div>
-
-            <div className="h-px bg-white/[0.15] mb-8" />
 
             {/* Section: Environment */}
             <div

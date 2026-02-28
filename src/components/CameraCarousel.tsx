@@ -922,8 +922,7 @@ export const CameraCarousel = ({ onCarouselChange, onTryOutClick }: CameraCarous
       {/* Explode button (when not exploded) / Try out button (when exploded) */}
       <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-20">
         {isExploded ? (
-          <Link
-            href="/generate"
+          <button
             onClick={() => {
               setActiveCamera(currentCamera.id as CameraId);
               onTryOutClick?.();
@@ -933,7 +932,7 @@ export const CameraCarousel = ({ onCarouselChange, onTryOutClick }: CameraCarous
           >
             <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: "0 0 40px rgba(176, 251, 205, 0.08)" }} />
             <span className="relative">Try Out</span>
-          </Link>
+          </button>
         ) : (
           <button
             onClick={() => setIsExploded(true)}

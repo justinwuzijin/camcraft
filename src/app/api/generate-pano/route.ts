@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import type { WorldEntry } from "@/lib/worldStore";
 
 function slugify(str: string): string {
   return str
@@ -147,6 +148,27 @@ export async function POST(req: Request) {
       Buffer.from(imagePart.inlineData.data, "base64")
     );
     console.log(`Saved panorama: public/generated/panos/${filename}`);
+
+    // Write companion JSON sidecar for world library
+    const worldEntry: WorldEntry = {
+      id: `world_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      panoPath: `/generated/panos/${filename}`,
+      parameters: {
+        location: resolved.location ?? "",
+        timeOfDay: resolved.timeOfDay ?? "",
+        decade: resolved.decade ?? "",
+        placeType: resolved.placeType ?? "",
+        weather: resolved.weather ?? "",
+        crowd: resolved.crowd ?? "",
+      },
+      prompt,
+      createdAt: Date.now(),
+    };
+    const jsonFilename = filename.replace(/\.(jpg|png)$/, ".json");
+    await writeFile(
+      path.join(dir, jsonFilename),
+      JSON.stringify(worldEntry, null, 2)
+    );
 
     return NextResponse.json({
       image: imagePart.inlineData.data,
