@@ -145,7 +145,16 @@ export default function CreatePage() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
       >
-        <CameraCarousel onCarouselChange={playCarouselSound} onTryOutClick={playConfirmSound} />
+        <CameraCarousel onCarouselChange={playCarouselSound} onTryOutClick={handleTryOut} />
+
+        {/* World picker modal */}
+        {showPicker && (
+          <WorldPickerModal
+            worlds={worlds}
+            onClose={() => setShowPicker(false)}
+            onGenerateNew={() => router.push("/generate")}
+          />
+        )}
 
         {/* Header overlay — matches Generate page style */}
         <header className="pointer-events-auto absolute top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">
