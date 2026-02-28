@@ -67,7 +67,7 @@ function SliderControl({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span
-          className="text-[10px] tracking-[0.2em] uppercase text-white/25"
+          className="text-[10px] tracking-[0.2em] uppercase text-white/60"
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {label}
@@ -77,8 +77,8 @@ function SliderControl({
           onClick={() => onChange(isRandom ? fallback : null)}
           className={`rounded-full px-3 py-0.5 text-[10px] tracking-wider uppercase transition-all ${
             isRandom
-              ? "text-white/20 hover:text-white/40"
-              : "text-[#B0FBCD]/60 hover:text-[#B0FBCD]/80"
+              ? "text-white/40 hover:text-white/60"
+              : "text-[#B0FBCD]/80 hover:text-[#B0FBCD]"
           }`}
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
@@ -86,7 +86,7 @@ function SliderControl({
         </button>
       </div>
 
-      <div className={`transition-opacity duration-300 ${isRandom ? "opacity-25" : "opacity-100"}`}>
+      <div className={`transition-opacity duration-300 ${isRandom ? "opacity-40" : "opacity-100"}`}>
         <input
           type="range"
           min={0}
@@ -101,7 +101,7 @@ function SliderControl({
             <span
               key={opt}
               className={`text-[9px] tracking-wide leading-tight transition-colors duration-200 ${
-                i === displayIdx && !isRandom ? "text-[#B0FBCD]/80" : "text-white/20"
+                i === displayIdx && !isRandom ? "text-[#B0FBCD]/90" : "text-white/45"
               }`}
               style={{ width: `${100 / options.length}%`, textAlign: "center", fontFamily: "var(--font-geist-mono)" }}
             >
@@ -167,7 +167,7 @@ function ChipSelector({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span
-          className="text-[10px] tracking-[0.2em] uppercase text-white/25"
+          className="text-[10px] tracking-[0.2em] uppercase text-white/60"
           style={{ fontFamily: "var(--font-geist-mono)" }}
         >
           {label}
@@ -176,7 +176,7 @@ function ChipSelector({
           <button
             type="button"
             onClick={handleClear}
-            className="text-[10px] tracking-wider uppercase text-white/20 hover:text-white/40 transition-colors"
+            className="text-[10px] tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Clear
@@ -184,7 +184,7 @@ function ChipSelector({
         )}
         {isRandom && !customMode && (
           <span
-            className="text-[10px] tracking-wider uppercase text-white/15"
+            className="text-[10px] tracking-wider uppercase text-white/40"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Any
@@ -205,8 +205,8 @@ function ChipSelector({
               }}
               className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
                 selected
-                  ? "bg-[#B0FBCD]/10 border-[#B0FBCD]/25 text-[#B0FBCD]/90"
-                  : "bg-white/[0.02] border-white/[0.06] text-white/30 hover:bg-white/[0.05] hover:text-white/50 hover:border-white/[0.12]"
+                  ? "bg-[#B0FBCD]/15 border-[#B0FBCD]/40 text-[#B0FBCD]"
+                  : "bg-white/[0.04] border-white/[0.15] text-white/55 hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.25]"
               }`}
             >
               {opt}
@@ -218,8 +218,8 @@ function ChipSelector({
           onClick={handleOtherClick}
           className={`rounded-full px-3 py-1.5 text-[11px] tracking-wide border transition-all duration-200 ${
             customMode || isCustomValue
-              ? "bg-[#B0FBCD]/10 border-[#B0FBCD]/25 text-[#B0FBCD]/90"
-              : "bg-white/[0.02] border-white/[0.06] text-white/30 hover:bg-white/[0.05] hover:text-white/50 hover:border-white/[0.12]"
+              ? "bg-[#B0FBCD]/15 border-[#B0FBCD]/40 text-[#B0FBCD]"
+              : "bg-white/[0.04] border-white/[0.15] text-white/55 hover:bg-white/[0.08] hover:text-white/80 hover:border-white/[0.25]"
           }`}
         >
           {isCustomValue ? value.charAt(0).toUpperCase() + value.slice(1) : "Other\u2026"}
@@ -242,14 +242,14 @@ function ChipSelector({
               if (e.key === "Escape") handleClear();
             }}
             placeholder="Type a custom setting..."
-            className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/70 placeholder-white/15 outline-none transition-all duration-200 focus:border-[#B0FBCD]/20 focus:bg-white/[0.04]"
+            className="flex-1 rounded-lg border border-white/[0.18] bg-white/[0.06] px-3 py-2 text-sm text-white/85 placeholder-white/35 outline-none transition-all duration-200 focus:border-[#B0FBCD]/35 focus:bg-white/[0.08]"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           />
           <button
             type="button"
             onClick={handleCustomSubmit}
             disabled={!customText.trim()}
-            className="shrink-0 rounded-lg border border-[#B0FBCD]/20 bg-[#B0FBCD]/[0.06] px-3 py-2 text-[11px] tracking-wider uppercase text-[#B0FBCD]/70 transition-all hover:bg-[#B0FBCD]/[0.12] hover:text-[#B0FBCD]/90 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="shrink-0 rounded-lg border border-[#B0FBCD]/35 bg-[#B0FBCD]/[0.10] px-3 py-2 text-[11px] tracking-wider uppercase text-[#B0FBCD]/90 transition-all hover:bg-[#B0FBCD]/[0.18] hover:text-[#B0FBCD] disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ fontFamily: "var(--font-geist-mono)" }}
           >
             Set
@@ -891,7 +891,7 @@ export default function GeneratePage() {
             {/* Section: Location */}
             <div className="mb-8">
               <div
-                className="text-[10px] tracking-[0.25em] uppercase text-white/25 mb-4"
+                className="text-[10px] tracking-[0.25em] uppercase text-white/60 mb-4"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 Location
@@ -899,7 +899,7 @@ export default function GeneratePage() {
               <CityAutocomplete value={location} onChange={setLocation} onCoordinatesChange={setLocationCoords} />
             </div>
 
-            <div className="h-px bg-white/[0.06] mb-8" />
+            <div className="h-px bg-white/[0.15] mb-8" />
 
             {/* Section: Time & Era */}
             <div
@@ -910,7 +910,7 @@ export default function GeneratePage() {
               <SliderControl label="Era" options={DECADE_OPTIONS} value={decade} onChange={setDecade} defaultIndex={6} />
             </div>
 
-            <div className="h-px bg-white/[0.06] mb-8" />
+            <div className="h-px bg-white/[0.15] mb-8" />
 
             {/* Section: Environment */}
             <div
@@ -930,7 +930,7 @@ export default function GeneratePage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span
-                    className="text-[10px] tracking-[0.2em] uppercase text-white/25"
+                    className="text-[10px] tracking-[0.2em] uppercase text-white/60"
                     style={{ fontFamily: "var(--font-geist-mono)" }}
                   >
                     Additional Instructions
@@ -939,7 +939,7 @@ export default function GeneratePage() {
                     <button
                       type="button"
                       onClick={() => setInstructions("")}
-                      className="text-[10px] tracking-wider uppercase text-white/20 hover:text-white/40 transition-colors"
+                      className="text-[10px] tracking-wider uppercase text-white/45 hover:text-white/70 transition-colors"
                       style={{ fontFamily: "var(--font-geist-mono)" }}
                     >
                       Clear
@@ -951,13 +951,13 @@ export default function GeneratePage() {
                   onChange={(e) => setInstructions(e.target.value)}
                   placeholder="e.g. Include a red telephone booth, make it a drone shot"
                   rows={3}
-                  className="w-full resize-none rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-sm text-white/70 placeholder-white/15 outline-none transition-all duration-200 focus:border-white/[0.12] focus:bg-white/[0.03]"
+                  className="w-full resize-none rounded-lg border border-white/[0.20] bg-white/[0.05] px-4 py-3 text-sm text-white/85 placeholder-white/35 outline-none transition-all duration-200 focus:border-white/[0.30] focus:bg-white/[0.07]"
                   style={{ fontFamily: "var(--font-geist-mono)" }}
                 />
               </div>
             </div>
 
-            <div className="h-px bg-white/[0.06] mb-8" />
+            <div className="h-px bg-white/[0.15] mb-8" />
 
             {/* Generate button */}
             <div style={{ animation: "fadeSlideIn 0.5s ease-out 0.15s both" }}>

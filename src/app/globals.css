@@ -52,3 +52,38 @@ body {
   0%, 100% { background-position: -50% 0; }
   50%      { background-position: 150% 0; }
 }
+
+/* Slider track styling for generate page */
+.slider-track {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+.slider-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #B0FBCD;
+  box-shadow: 0 0 8px rgba(176,251,205,0.5);
+  cursor: pointer;
+  border: none;
+}
+.slider-track::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #B0FBCD;
+  box-shadow: 0 0 8px rgba(176,251,205,0.5);
+  cursor: pointer;
+  border: none;
+}
+.slider-track:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

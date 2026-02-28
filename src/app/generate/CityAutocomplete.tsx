@@ -116,11 +116,11 @@ export default function CityAutocomplete({
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder="e.g. Tokyo, Paris, New York..."
-        className="w-full rounded-lg border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white/90 placeholder-white/20 outline-none focus:border-[#B0FBCD]/25 focus:bg-white/[0.05] transition-all"
+        className="w-full rounded-lg border border-white/[0.20] bg-white/[0.06] px-4 py-3 text-sm text-white/90 placeholder-white/40 outline-none focus:border-[#B0FBCD]/40 focus:bg-white/[0.09] transition-all"
         autoComplete="off"
       />
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1.5 w-full overflow-hidden rounded-lg border border-white/[0.06] bg-[#0c0c0e] shadow-xl shadow-black/60 backdrop-blur-xl">
+        <ul className="absolute z-50 mt-1.5 w-full overflow-hidden rounded-lg border border-white/[0.15] bg-[#0c0c0e] shadow-xl shadow-black/60 backdrop-blur-xl">
           {suggestions.map((s, i) => (
             <li
               key={s.id}
@@ -134,7 +134,7 @@ export default function CityAutocomplete({
             >
               <span className="font-medium text-white/80">{s.city}</span>
               {s.fullName !== s.city && (
-                <span className="text-white/30">
+                <span className="text-white/55">
                   {s.fullName.slice(s.city.length)}
                 </span>
               )}
