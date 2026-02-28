@@ -2,22 +2,26 @@ import { NextResponse } from "next/server";
 
 type CameraId = "sony-handycam" | "digital-camera" | "fujifilm-xt2" | "sony-a7iv";
 
+const BASE_PROMPT =
+  "Generate realistic faces with natural skin, proper eyes, and believable expressions. Generate readable text on signs. Generate crisp fabric, hair, foliage, and architectural detail. " +
+  "Guess what faces, textures, signs, and objects would actually look like and render them convincingly. " +
+  "The input is blurry and low-detail — you should freely generate and interpolate realistic details to fill in the gaps.";
+
 const CAMERA_PROMPTS: Record<CameraId, string> = {
   "sony-a7iv":
     "This is a low-resolution capture from a panorama. Reimagine it as a sharp, natural photograph taken with a Sony A7IV at 85mm f/1.4. " +
-    "The input is blurry and low-detail — you should freely generate and interpolate realistic details to fill in the gaps. " +
-    "Guess what faces, textures, signs, and objects would actually look like and render them convincingly. " +
     "The result must look like a real, high-resolution DSLR photo — not an upscaled version of the input. " +
-    "Generate realistic faces with natural skin, proper eyes, and believable expressions. Generate readable text on signs. Generate crisp fabric, hair, foliage, and architectural detail. " +
     "Keep the same general scene, composition, and lighting, but make it look like it was actually there and photographed professionally. " +
-    "Subtle shallow depth of field with background bokeh.",
+    "Subtle shallow depth of field with background bokeh. " +
+    BASE_PROMPT,
 
   "fujifilm-xt2":
     "This is a low-resolution capture from a panorama. Reimagine it as a photograph taken with a Fujifilm X-T2 mirrorless camera with the XF 35mm f/1.4 lens. " +
     "Apply Fujifilm's signature color science — use PROVIA/Standard film simulation with slightly lifted shadows, rich but not oversaturated colors, and characteristic Fuji skin tones (warm, natural, slightly pink undertones). " +
     "The image should have organic film-like grain, slightly muted highlights, and that distinctive X-Trans sensor rendering with fine detail. " +
-    "Generate realistic details for faces, textures, and objects. Keep the composition but make it look like an authentic Fujifilm JPEG straight out of camera. " +
-    "The overall feel should be warm, nostalgic, and film-like — reminiscent of classic Fuji Superia or Velvia film stocks.",
+    "Keep the composition but make it look like an authentic Fujifilm JPEG straight out of camera. " +
+    "The overall feel should be warm, nostalgic, and film-like — reminiscent of classic Fuji Superia or Velvia film stocks. " +
+    BASE_PROMPT,
 
   "digital-camera":
     "This is a low-resolution capture from a panorama. Reimagine it as a photograph taken with an early 2000s compact digital camera (like a Canon PowerShot or Sony Cybershot from 2003-2006). " +
@@ -25,7 +29,8 @@ const CAMERA_PROMPTS: Record<CameraId, string> = {
     "The image should have the 'built-in flash' look with slightly flat lighting, minor chromatic aberration at edges, and that distinctive CCD sensor rendering. " +
     "Resolution should appear lower — around 3-5 megapixels worth of detail. Colors should lean slightly magenta/purple in shadows. " +
     "Add a subtle orange date stamp in the bottom-right corner showing today's date in MM/DD/YYYY format. " +
-    "The overall aesthetic should scream 'early digital photography' — not bad, but distinctly of its era.",
+    "The overall aesthetic should scream 'early digital photography' — not bad, but distinctly of its era. " +
+    BASE_PROMPT,
 
   "sony-handycam":
     "This is a low-resolution capture from a panorama. Reimagine it as a still frame captured from a late 1990s Sony Handycam Hi8/Digital8 camcorder. " +
@@ -33,7 +38,8 @@ const CAMERA_PROMPTS: Record<CameraId, string> = {
     "The image should have that characteristic CCD video camera look with slightly blown highlights, crushed blacks, and analog video noise/grain. " +
     "Colors should be slightly oversaturated with that warm, nostalgic VHS palette. Add subtle tracking wobble artifacts at edges. " +
     "The aspect ratio feeling should be 4:3 standard definition. Resolution should appear SD video quality (480i). " +
-    "Include subtle tape artifacts like minor dropouts or color banding. The overall look should be unmistakably 'home video from the 90s'.",
+    "Include subtle tape artifacts like minor dropouts or color banding. The overall look should be unmistakably 'home video from the 90s'. " +
+    BASE_PROMPT,
 };
 
 export async function POST(req: Request) {
