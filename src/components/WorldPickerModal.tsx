@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { WorldEntry } from "@/lib/worldStore";
 
 // ── Viewfinder corner brackets ───────────────────────────────
-function ViewfinderCorners({ active }: { active: boolean }) {
+export function ViewfinderCorners({ active }: { active: boolean }) {
   const size = 12;
   const thickness = 1.5;
   const color = active ? "rgba(176,251,205,0.7)" : "rgba(176,251,205,0)";
@@ -50,7 +50,7 @@ function ViewfinderCorners({ active }: { active: boolean }) {
 }
 
 // ── Relative time label ──────────────────────────────────────
-function relativeTime(ts: number): string {
+export function relativeTime(ts: number): string {
   const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60_000);
   const hours = Math.floor(diff / 3_600_000);
@@ -63,7 +63,7 @@ function relativeTime(ts: number): string {
 }
 
 // ── World card ───────────────────────────────────────────────
-function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: () => void; onDelete: () => void }) {
+export function WorldCard({ world, onClick, onDelete }: { world: WorldEntry; onClick: () => void; onDelete: () => void }) {
   const { parameters, panoPath, createdAt } = world;
 
   const primaryLabel =
@@ -256,7 +256,7 @@ export default function WorldPickerModal({ worlds: initialWorlds, onClose, onGen
             <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 sm:px-10">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => router.push('/create')}
+                  onClick={onClose}
                   className="group flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:-translate-x-0.5">

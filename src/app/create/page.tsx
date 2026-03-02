@@ -7,8 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { NavButton } from "@/components/NavButton";
-import WorldPickerModal from "@/components/WorldPickerModal";
-import type { WorldEntry } from "@/lib/worldStore";
 
 // Dynamically import CameraCarousel with SSR disabled
 // Three.js requires browser APIs that aren't available during server-side rendering
@@ -107,8 +105,6 @@ function ShutterOpenOverlay() {
 
 export default function CreatePage() {
   const router = useRouter();
-  const [worlds, setWorlds] = useState<WorldEntry[]>([]);
-  const [showPicker, setShowPicker] = useState(false);
 
   const playCarouselSound = useCallback(() => {
     const audio = new Audio("/carousel.mp3");
@@ -122,12 +118,11 @@ export default function CreatePage() {
     try {
       const res = await fetch("/api/worlds");
       const data = await res.json();
-      const fetchedWorlds: WorldEntry[] = data.worlds ?? [];
+      const fetchedWorlds = data.worlds ?? [];
       if (fetchedWorlds.length === 0) {
         router.push("/generate");
       } else {
-        setWorlds(fetchedWorlds);
-        setShowPicker(true);
+        router.push("/worlds");
       }
     } catch {
       router.push("/generate");
@@ -146,15 +141,6 @@ export default function CreatePage() {
         transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
       >
         <CameraCarousel onCarouselChange={playCarouselSound} onTryOutClick={handleTryOut} />
-
-        {/* World picker modal */}
-        {showPicker && (
-          <WorldPickerModal
-            worlds={worlds}
-            onClose={() => setShowPicker(false)}
-            onGenerateNew={() => router.push("/generate")}
-          />
-        )}
 
         {/* Header overlay — matches Generate page style */}
         <header className="pointer-events-auto absolute top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#060608]/80 backdrop-blur-xl">

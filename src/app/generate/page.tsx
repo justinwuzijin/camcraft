@@ -17,7 +17,6 @@ import type { GalleryEntry } from "@/lib/galleryStore";
 import { getUnseenCount, incrementUnseen } from "@/lib/galleryBadgeStore";
 import { getActiveCamera, CAMERA_SPECS } from "@/lib/cameraStore";
 import type { CameraId } from "@/lib/cameraStore";
-import WorldPickerModal from "@/components/WorldPickerModal";
 import type { WorldEntry } from "@/lib/worldStore";
 
 const PanoViewer = dynamic(() => import("@/app/pano/PanoViewer"), {
@@ -449,8 +448,6 @@ function GeneratePageContent() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialDismissed, setTutorialDismissed] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
-  const [worlds, setWorlds] = useState<WorldEntry[]>([]);
-  const [showPicker, setShowPicker] = useState(false);
 
   // Load existing world from ?pano= search param
   useEffect(() => {
@@ -805,32 +802,10 @@ function GeneratePageContent() {
         {/* Navigation buttons */}
         <div className="absolute top-5 left-5 z-30 flex items-center gap-2">
           <NavButton
-            href=""
+            href="/worlds"
             icon="back"
             label="Back"
             variant="overlay"
-            onClick={async () => {
-              try {
-                const res = await fetch("/api/worlds");
-                const data = await res.json();
-                const fetchedWorlds: WorldEntry[] = data.worlds ?? [];
-                if (fetchedWorlds.length > 0) {
-                  setWorlds(fetchedWorlds);
-                  setShowPicker(true);
-                  return;
-                }
-              } catch {
-                // fall through to reset
-              }
-              setShowViewer(false);
-              setTutorialDismissed(false);
-              if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
-              setPanoUrl(null);
-              setResolvedParams(null);
-              setFocusImage(null);
-              focusBase64Ref.current = null;
-              setCameraOverlayActive(false);
-            }}
           />
           <NavButton
             ref={galleryBtnRef}
@@ -858,35 +833,6 @@ function GeneratePageContent() {
           <SceneDetailsPanel resolvedParams={resolvedParams} />
         )}
 
-        {/* World picker modal — shown when back is pressed and worlds exist */}
-        {showPicker && (
-          <WorldPickerModal
-            worlds={worlds}
-            onClose={() => setShowPicker(false)}
-            onSelectWorld={(world) => {
-              setShowPicker(false);
-              if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
-              setPanoUrl(world.panoPath);
-              setResolvedParams(null);
-              setFocusImage(null);
-              focusBase64Ref.current = null;
-              setCameraOverlayActive(false);
-              setShowViewer(true);
-              setTutorialDismissed(true);
-            }}
-            onGenerateNew={() => {
-              setShowPicker(false);
-              setShowViewer(false);
-              setTutorialDismissed(false);
-              if (panoUrl?.startsWith("blob:")) URL.revokeObjectURL(panoUrl);
-              setPanoUrl(null);
-              setResolvedParams(null);
-              setFocusImage(null);
-              focusBase64Ref.current = null;
-              setCameraOverlayActive(false);
-            }}
-          />
-        )}
       </div>
     );
   }
