@@ -9,8 +9,6 @@ interface CitySuggestion {
   coordinates: [number, number]; // [lng, lat]
 }
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
 export default function CityAutocomplete({
   value,
   onChange,
@@ -27,20 +25,12 @@ export default function CityAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchCities = useCallback(async (query: string) => {
-    if (query.length < 2 || !MAPBOX_TOKEN) {
+    if (query.length < 2) {
       setSuggestions([]);
       return;
     }
     try {
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
-          new URLSearchParams({
-            access_token: MAPBOX_TOKEN,
-            types: "place",
-            autocomplete: "true",
-            limit: "5",
-          })
-      );
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
       if (!res.ok) return;
       const data = await res.json();
       const results: CitySuggestion[] = data.features.map(
