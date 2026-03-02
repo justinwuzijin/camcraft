@@ -743,6 +743,7 @@ function GeneratePageContent() {
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
+      setShowTutorial(false);
     } finally {
       setIsGenerating(false);
     }

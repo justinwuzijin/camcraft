@@ -36,21 +36,31 @@ function isSet(val: string | undefined): val is string {
 
 function buildPrompt(params: Record<string, string>): string {
   const base =
-    "Create an equirectangular image with a perfect seam connection (for viewing in 360). Make it as realistic and natural as possible - like a real Street View Photo. No motion blur - all people, vehicles, and moving objects should be frozen in place.";
+    "Generate a Google Street View photo. This must be a proper equirectangular projection for spherical 360° viewing — the left and right edges connect seamlessly, horizontal lines near the equator stay straight, and the top/bottom show natural polar stretching. No fisheye, no barrel distortion, no mirroring. Photorealistic, sharp, modern digital camera quality. All people and vehicles frozen in place (no motion blur).";
 
   const detailParts: string[] = [];
   if (isSet(params.location)) detailParts.push(`Location: ${params.location}`);
   if (isSet(params.timeOfDay)) detailParts.push(`Time of day: ${params.timeOfDay}`);
-  if (isSet(params.decade) && params.decade !== "Today")
+  if (isSet(params.decade) && params.decade !== "Today") {
+    // Avoid "era" framing — just describe the props/set dressing to prevent
+    // the model from switching to an old photography projection style
     detailParts.push(
-      `The scene is set in the ${params.decade} era — reflect this ONLY through period-accurate details like vehicles, fashion, signage, storefronts, and street furniture. KEEP IT REALISTIC - like the photo was taken with today's photography equipment. The architecture, roads, and environment should still look like a modern perfect replica photograph taken in that time period, NOT a stylized or vintage-filtered illustration`
+      `The cars, clothing, store signs, advertisements, and street furniture in the scene should all be from the ${params.decade}. Everything else about the image — the camera, resolution, projection, and lighting — is identical to a 2024 Google Street View capture`
     );
+  }
   if (isSet(params.placeType)) detailParts.push(`Setting: a ${params.placeType}`);
   if (isSet(params.weather)) detailParts.push(`Weather: ${params.weather}`);
   if (isSet(params.crowd)) detailParts.push(`Crowd level: ${params.crowd}`);
 
   let prompt = detailParts.length === 0 ? base : `${base}\n\n${detailParts.join(". ")}.`;
   if (params.instructions) prompt += `\n\nAdditional instructions: ${params.instructions}`;
+
+  // For older decades, append a final format reminder (recency bias helps)
+  const decadeNum = parseInt(params.decade);
+  if (isSet(params.decade) && params.decade !== "Today" && !isNaN(decadeNum) && decadeNum < 2000) {
+    prompt += "\n\nRemember: equirectangular projection only. No fisheye, no barrel distortion, no mirrored reflections at top/bottom. The format must be indistinguishable from Google Street View.";
+  }
+
   return prompt;
 }
 
